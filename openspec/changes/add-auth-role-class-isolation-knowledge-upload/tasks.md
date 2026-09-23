@@ -19,7 +19,7 @@
 ## 4. Server-side role and class isolation
 
 - [x] 4.1 Implement reusable server-side authentication and teacher-role authorization guards/middleware without creating the upload API; verify `pytest tests/test_authorization.py::test_teacher_role_guard_allows_teacher_and_denies_student -q` exits successfully
-- [ ] 4.2 Implement authenticated `GET /api/materials` and `GET /api/materials/<material_id>` using only the server session class for filtering; verify `pytest tests/test_material_access.py::test_class_a_user_lists_and_reads_class_a_material -q` exits successfully
+- [x] 4.2 Implement authenticated `GET /api/materials` and `GET /api/materials/<material_id>` using only the server session class for filtering; verify `pytest tests/test_material_access.py::test_class_a_user_lists_and_reads_class_a_material -q` exits successfully
 - [ ] 4.3 Enforce list parameter isolation and cross-class detail concealment; verify `pytest tests/test_material_access.py::test_class_id_parameter_cannot_expand_list_scope tests/test_material_access.py::test_cross_class_detail_returns_404_without_material_data -q` exits successfully
 
 ## 5. Teacher upload and knowledge-base ingestion
