@@ -5,6 +5,14 @@ const detail = document.querySelector("#material-detail");
 const detailFields = document.querySelector("#material-detail-fields");
 const teacherUpload = document.querySelector("#teacher-upload");
 
+function roleLabel(role) {
+  return { teacher: "教师", student: "学生" }[role] || role;
+}
+
+function materialStatusLabel(value) {
+  return { ready: "已入库" }[value] || value;
+}
+
 function redirectToLogin() {
   list.replaceChildren();
   detail.hidden = true;
@@ -23,11 +31,11 @@ async function request(path, options) {
 function showDetail(material) {
   detailFields.replaceChildren();
   for (const [label, value] of Object.entries({
-    ID: material.id,
-    "Display name": material.display_name,
-    "Class ID": material.class_id,
-    "Uploader ID": material.uploader_id,
-    Status: material.status,
+    "材料编号": material.id,
+    "材料名称": material.display_name,
+    "班级编号": material.class_id,
+    "上传者编号": material.uploader_id,
+    "入库状态": materialStatusLabel(material.status),
   })) {
     const term = document.createElement("dt");
     term.textContent = label;
@@ -39,19 +47,19 @@ function showDetail(material) {
 }
 
 async function loadDetail(id) {
-  status.textContent = "Loading material…";
+  status.textContent = "正在加载材料…";
   detail.hidden = true;
   try {
     const response = await request(`/api/materials/${id}`);
     if (response.status === 404) {
-      status.textContent = "That material is no longer available.";
+      status.textContent = "该材料已不存在或无权访问。";
       return;
     }
     if (!response.ok) throw new Error("detail_failed");
     showDetail((await response.json()).material);
     status.textContent = "";
   } catch (error) {
-    if (error.message !== "unauthorized") status.textContent = "Unable to load material details.";
+    if (error.message !== "unauthorized") status.textContent = "无法加载材料详情，请稍后重试。";
   }
 }
 
@@ -64,25 +72,25 @@ async function loadMaterials() {
     const item = document.createElement("li");
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = `${material.display_name} · ${material.status}`;
+    button.textContent = `${material.display_name} · ${materialStatusLabel(material.status)}`;
     button.addEventListener("click", () => loadDetail(material.id));
     item.append(button);
     list.append(item);
   }
-  if (!materials.length) status.textContent = "No materials are available for your class.";
+  if (!materials.length) status.textContent = "当前班级暂无材料。";
 }
 
 function renderTeacherUpload(user) {
   if (user.role !== "teacher") return;
   teacherUpload.hidden = false;
   teacherUpload.innerHTML = `
-    <h2 id="upload-title">Add material</h2>
+    <h2 id="upload-title">上传材料</h2>
     <form id="upload-form" novalidate>
-      <label for="display-name">Display name</label>
+      <label for="display-name">材料名称</label>
       <input id="display-name" name="display_name" required>
-      <label for="content">Content</label>
+      <label for="content">材料正文</label>
       <textarea id="content" name="content" rows="7" required></textarea>
-      <button type="submit">Upload material</button>
+      <button type="submit">上传材料</button>
     </form>`;
   const form = teacherUpload.querySelector("#upload-form");
   form.addEventListener("submit", async (event) => {
@@ -90,12 +98,12 @@ function renderTeacherUpload(user) {
     const displayName = form.elements.display_name.value.trim();
     const content = form.elements.content.value.trim();
     if (!displayName || !content) {
-      status.textContent = "Enter both a display name and material content.";
+      status.textContent = "请填写材料名称和正文。";
       return;
     }
     const button = form.querySelector("button");
     button.disabled = true;
-    status.textContent = "Uploading material…";
+    status.textContent = "正在上传材料…";
     try {
       const response = await request("/api/materials", {
         method: "POST",
@@ -105,14 +113,14 @@ function renderTeacherUpload(user) {
       if (response.status === 201) {
         form.reset();
         await loadMaterials();
-        status.textContent = "Material uploaded.";
+        status.textContent = "材料上传成功。";
       } else if (response.status === 403) {
-        status.textContent = "You do not have permission to upload materials.";
+        status.textContent = "你没有上传材料的权限。";
       } else {
-        status.textContent = "Unable to upload material. Please try again.";
+        status.textContent = "上传材料失败，请稍后重试。";
       }
     } catch (error) {
-      if (error.message !== "unauthorized") status.textContent = "Unable to upload material. Please try again.";
+      if (error.message !== "unauthorized") status.textContent = "上传材料失败，请稍后重试。";
     } finally {
       button.disabled = false;
     }
@@ -124,11 +132,11 @@ async function initializeWorkspace() {
     const response = await request("/api/me");
     if (!response.ok) throw new Error("identity_failed");
     const { user } = await response.json();
-    userContext.textContent = `${user.account} · ${user.role} · class ${user.class_id}`;
+    userContext.textContent = `${user.account} · ${roleLabel(user.role)} · ${user.class_id} 班`;
     renderTeacherUpload(user);
     await loadMaterials();
   } catch (error) {
-    if (error.message !== "unauthorized") status.textContent = "Unable to load your workspace.";
+    if (error.message !== "unauthorized") status.textContent = "无法加载材料页面，请稍后重试。";
   }
 }
 

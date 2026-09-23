@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CampusClaw · Materials</title>
+    <title>CampusClaw · 班级材料</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   </head>
   <body>
@@ -11,18 +11,18 @@
       <header class="workspace-header">
         <div>
           <p class="eyebrow">CampusClaw</p>
-          <h1 id="materials-title">Class materials</h1>
-          <p id="user-context" class="muted">Loading your class context…</p>
+          <h1 id="materials-title">班级材料</h1>
+          <p id="user-context" class="muted">正在加载班级信息…</p>
         </div>
-        <button id="logout-button" type="button">Sign out</button>
+        <button id="logout-button" type="button">退出登录</button>
       </header>
       <p id="workspace-status" class="status" role="status" aria-live="polite"></p>
       <section aria-labelledby="material-list-title">
-        <h2 id="material-list-title">Materials</h2>
+        <h2 id="material-list-title">材料列表</h2>
         <ul id="material-list" class="material-list"></ul>
       </section>
       <section id="material-detail" class="detail" hidden aria-labelledby="material-detail-title">
-        <h2 id="material-detail-title">Material details</h2>
+        <h2 id="material-detail-title">材料详情</h2>
         <dl id="material-detail-fields"></dl>
       </section>
       <section id="teacher-upload" hidden></section>
