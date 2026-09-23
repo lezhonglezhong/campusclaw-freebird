@@ -67,6 +67,22 @@ def login():
     return jsonify(user=user_payload(user))
 
 
+@auth_bp.get("/api/me")
+def current_user():
+    """Return the server-validated identity used by browser page initialization."""
+    user = session_user()
+    if user is None:
+        return jsonify(error="unauthorized"), 401
+    return jsonify(user=user_payload(user))
+
+
+@auth_bp.post("/logout")
+def logout():
+    """Clear the signed browser session without exposing session contents."""
+    session.clear()
+    return "", 204
+
+
 @auth_bp.get("/materials")
 def materials_page():
     """Minimal protected browser page used by the login redirect contract."""
