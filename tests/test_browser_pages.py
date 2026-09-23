@@ -27,3 +27,15 @@ def test_login_page_is_public_and_materials_page_requires_session(tmp_path: Path
     assert workspace.status_code == 200
     assert b'id="material-list"' in workspace.data
     assert b'/static/app.css' in workspace.data
+
+
+def test_login_page_declares_safe_interactive_contract(tmp_path: Path) -> None:
+    app = make_app(tmp_path)
+    page = app.test_client().get("/login")
+    script = (Path(app.static_folder) / "login.js").read_text()
+
+    assert b"/static/login.js" in page.data
+    assert 'fetch("/login"' in script
+    assert 'window.location.assign("/materials")' in script
+    assert "Account or password is incorrect." in script
+    assert "localStorage" not in script
