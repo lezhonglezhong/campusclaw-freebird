@@ -1,5 +1,7 @@
 """Authentication endpoints and helpers."""
 
+from functools import wraps
+
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import check_password_hash
 
@@ -20,6 +22,28 @@ def session_user() -> User | None:
     if not isinstance(user_id, int):
         return None
     return current_app.extensions["sqlalchemy"]["session"].get(User, user_id)
+
+
+def require_authenticated_api(view):
+    """Require a server-validated user for an API endpoint."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = session_user()
+        if user is None:
+            return jsonify(error="unauthorized"), 401
+        return view(user, *args, **kwargs)
+    return wrapped
+
+
+def require_teacher(view):
+    """Require the authenticated API user to have the teacher role."""
+    @require_authenticated_api
+    @wraps(view)
+    def wrapped(user: User, *args, **kwargs):
+        if user.role != "teacher":
+            return jsonify(error="forbidden"), 403
+        return view(user, *args, **kwargs)
+    return wrapped
 
 
 @auth_bp.post("/login")
