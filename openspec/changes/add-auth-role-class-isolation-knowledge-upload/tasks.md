@@ -25,7 +25,7 @@
 ## 5. Teacher upload and knowledge-base ingestion
 
 - [x] 5.1 Implement `POST /api/materials` using the 4.1 teacher guard and server-derived class; write local content and commit a complete Material record atomically with cleanup on failure; verify `pytest tests/test_upload.py::test_teacher_upload_creates_class_owned_local_material tests/test_upload.py::test_student_upload_is_403_and_creates_no_record tests/test_upload.py::test_failed_upload_leaves_no_record_or_file -q` exits successfully
-- [ ] 5.2 Verify the existing server-filtered list exposes a successful upload only to its owning class; verify `pytest tests/test_upload.py::test_successful_upload_appears_in_own_class_list -q` exits successfully
+- [x] 5.2 Verify the existing server-filtered list exposes a successful upload only to its owning class; verify `pytest tests/test_upload.py::test_successful_upload_appears_in_own_class_list -q` exits successfully
 
 ## 6. Docker Compose and health checks
 

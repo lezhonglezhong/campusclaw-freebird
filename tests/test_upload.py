@@ -41,3 +41,12 @@ def test_failed_upload_leaves_no_record_or_file(tmp_path: Path) -> None:
     response = client.post("/api/materials", json={"display_name": "Notes", "content": "lesson content"})
     assert response.status_code == 500
     assert app.extensions["sqlalchemy"]["session"].query(Material).count() == before
+
+
+def test_successful_upload_appears_in_own_class_list(tmp_path: Path) -> None:
+    _app, client = app_and_client(tmp_path)
+    created = client.post("/api/materials", json={"display_name": "New notes", "content": "content"})
+    response = client.get("/api/materials")
+    assert created.status_code == 201
+    assert created.json["material"]["id"] in {item["id"] for item in response.json["materials"]}
+    assert {item["class_id"] for item in response.json["materials"]} == {1}
