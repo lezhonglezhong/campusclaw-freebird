@@ -8,29 +8,20 @@ CampusClaw 是“互联网软件技术开发与实践”课程的三人小组学
 
 ## Docker Compose 启动
 
-项目推荐使用 Docker Compose 作为可复现启动方式。首次启动会拉取 Dockerfile
-中指定的 Python 基础镜像、安装依赖并构建应用；不需要提交 Docker 镜像、容器
-或本地数据库到 GitHub。
+项目推荐使用 Docker Compose 作为可复现启动方式。首次启动会拉取基础镜像、
+安装依赖并构建应用。
 
 ```bash
 cd campusclaw-freebird
-SESSION_SECRET='请替换为自己的随机字符串' docker compose up --build -d --wait
-SESSION_SECRET='使用同一段随机字符串' docker compose exec campusclaw python -m flask --app campusclaw seed
+SESSION_SECRET='your-secret' docker compose up --build -d --wait
+docker compose exec campusclaw python -m flask --app campusclaw seed
 ```
 
-浏览器访问 `http://localhost:8000/login`。部署在本服务器时，访问服务器地址的
-`/login`，例如 `http://10.129.165.201:8000/login`。
+浏览器访问 `http://localhost:8000/login`。
 
 使用 `docker compose ps` 可确认服务状态为 `healthy`；健康检查地址为
 `/health`。后续启动若本地镜像仍在，可使用 `docker compose up -d`。
 
-`SESSION_SECRET` 是登录会话的服务器端密钥，必须自行设置且不得提交到仓库。
-`.env.example` 只提供变量示例；`.env`、SQLite 数据库、`instance/` 材料数据、
-Docker 镜像和 `__pycache__/` 都不应提交。
-
-> Dockerfile 当前使用 `docker.m.daocloud.io` 的 Python 镜像代理，以适配本服务器
-> 无法由 Docker 守护进程直接访问 Docker Hub 的网络环境。其他部署者可按其网络
-> 与组织要求替换为可信且可访问的镜像来源。
 
 ## 本地测试账号
 
