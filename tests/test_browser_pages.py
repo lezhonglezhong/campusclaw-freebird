@@ -39,3 +39,18 @@ def test_login_page_declares_safe_interactive_contract(tmp_path: Path) -> None:
     assert 'window.location.assign("/materials")' in script
     assert "Account or password is incorrect." in script
     assert "localStorage" not in script
+
+
+def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: Path) -> None:
+    app = make_app(tmp_path)
+    workspace = app.test_client()
+    workspace.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    page = workspace.get("/materials")
+    script = (Path(app.static_folder) / "materials.js").read_text()
+
+    assert b"/static/materials.js" in page.data
+    assert 'request("/api/me")' in script
+    assert 'request("/api/materials")' in script
+    assert 'request(`/api/materials/${id}`)' in script
+    assert "That material is no longer available." in script
+    assert 'window.location.replace("/login")' in script

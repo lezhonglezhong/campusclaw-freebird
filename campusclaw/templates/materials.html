@@ -25,16 +25,8 @@
         <h2 id="material-detail-title">Material details</h2>
         <dl id="material-detail-fields"></dl>
       </section>
-      <section id="teacher-upload" hidden aria-labelledby="upload-title">
-        <h2 id="upload-title">Add material</h2>
-        <form id="upload-form" novalidate>
-          <label for="display-name">Display name</label>
-          <input id="display-name" name="display_name" required>
-          <label for="content">Content</label>
-          <textarea id="content" name="content" rows="7" required></textarea>
-          <button type="submit">Upload material</button>
-        </form>
-      </section>
+      <section id="teacher-upload" hidden></section>
     </main>
+    <script src="{{ url_for('static', filename='materials.js') }}" defer></script>
   </body>
 </html>
