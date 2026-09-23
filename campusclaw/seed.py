@@ -1,6 +1,7 @@
 """Repeatable local development data."""
 
 from flask import Flask
+from werkzeug.security import generate_password_hash
 
 from campusclaw.models import Class, Material, User
 
@@ -28,7 +29,7 @@ def seed_data(app: Flask) -> None:
             session.add(
                 User(
                     account=account,
-                    password_hash=details["password"],
+                    password_hash=generate_password_hash(details["password"]),
                     role=details["role"],
                     class_=classes[details["class_name"]],
                 )
