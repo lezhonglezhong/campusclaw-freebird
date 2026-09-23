@@ -40,3 +40,10 @@ def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tm
     assert response.status_code == 401
     with client.session_transaction() as session:
         assert "user_id" not in session
+
+
+def test_responses_do_not_expose_session_secret(tmp_path: Path) -> None:
+    _app, client = make_client(tmp_path)
+    secret = "test-session-secret"
+    for response in (client.get("/materials"), client.post("/login", json={"account": "unknown", "password": "bad"})):
+        assert secret not in response.get_data(as_text=True)

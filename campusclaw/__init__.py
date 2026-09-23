@@ -24,6 +24,8 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     if test_config is not None:
         app.config.update(test_config)
 
+    if not app.config["SESSION_SECRET"]:
+        raise RuntimeError("SESSION_SECRET must be configured")
     app.secret_key = app.config["SESSION_SECRET"]
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)

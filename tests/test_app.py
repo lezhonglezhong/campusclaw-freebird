@@ -13,6 +13,7 @@ def test_application_uses_configured_sqlite_persistence(tmp_path: Path) -> None:
         {
             "TESTING": True,
             "DATABASE_URL": f"sqlite:///{database_path}",
+            "SESSION_SECRET": "test-session-secret",
         }
     )
 
