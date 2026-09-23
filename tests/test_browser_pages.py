@@ -54,3 +54,19 @@ def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: 
     assert 'request(`/api/materials/${id}`)' in script
     assert "That material is no longer available." in script
     assert 'window.location.replace("/login")' in script
+
+
+def test_workspace_declares_teacher_upload_and_student_read_only_contract(tmp_path: Path) -> None:
+    app = make_app(tmp_path)
+    script = (Path(app.static_folder) / "materials.js").read_text()
+    teacher = app.test_client()
+    teacher.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    student = app.test_client()
+    student.post("/login", json={"account": "student-a", "password": "student-a-password"})
+
+    assert 'if (user.role !== "teacher") return;' in script
+    assert 'request("/api/materials", {' in script
+    assert "Material uploaded." in script
+    assert "You do not have permission to upload materials." in script
+    assert b'id="upload-form"' not in student.get("/materials").data
+    assert b'id="upload-form"' not in teacher.get("/materials").data

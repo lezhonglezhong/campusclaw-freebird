@@ -3,6 +3,7 @@ const status = document.querySelector("#workspace-status");
 const list = document.querySelector("#material-list");
 const detail = document.querySelector("#material-detail");
 const detailFields = document.querySelector("#material-detail-fields");
+const teacherUpload = document.querySelector("#teacher-upload");
 
 function redirectToLogin() {
   list.replaceChildren();
@@ -71,14 +72,61 @@ async function loadMaterials() {
   if (!materials.length) status.textContent = "No materials are available for your class.";
 }
 
+function renderTeacherUpload(user) {
+  if (user.role !== "teacher") return;
+  teacherUpload.hidden = false;
+  teacherUpload.innerHTML = `
+    <h2 id="upload-title">Add material</h2>
+    <form id="upload-form" novalidate>
+      <label for="display-name">Display name</label>
+      <input id="display-name" name="display_name" required>
+      <label for="content">Content</label>
+      <textarea id="content" name="content" rows="7" required></textarea>
+      <button type="submit">Upload material</button>
+    </form>`;
+  const form = teacherUpload.querySelector("#upload-form");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const displayName = form.elements.display_name.value.trim();
+    const content = form.elements.content.value.trim();
+    if (!displayName || !content) {
+      status.textContent = "Enter both a display name and material content.";
+      return;
+    }
+    const button = form.querySelector("button");
+    button.disabled = true;
+    status.textContent = "Uploading material…";
+    try {
+      const response = await request("/api/materials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: displayName, content }),
+      });
+      if (response.status === 201) {
+        form.reset();
+        await loadMaterials();
+        status.textContent = "Material uploaded.";
+      } else if (response.status === 403) {
+        status.textContent = "You do not have permission to upload materials.";
+      } else {
+        status.textContent = "Unable to upload material. Please try again.";
+      }
+    } catch (error) {
+      if (error.message !== "unauthorized") status.textContent = "Unable to upload material. Please try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 async function initializeWorkspace() {
   try {
     const response = await request("/api/me");
     if (!response.ok) throw new Error("identity_failed");
     const { user } = await response.json();
     userContext.textContent = `${user.account} · ${user.role} · class ${user.class_id}`;
+    renderTeacherUpload(user);
     await loadMaterials();
-    window.campusClawUser = user;
   } catch (error) {
     if (error.message !== "unauthorized") status.textContent = "Unable to load your workspace.";
   }
