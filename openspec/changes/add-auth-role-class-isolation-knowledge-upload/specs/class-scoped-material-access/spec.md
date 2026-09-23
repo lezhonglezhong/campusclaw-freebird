@@ -1,0 +1,46 @@
+# Spec Delta
+
+## Purpose
+
+Enforces class membership as a server-side data boundary for knowledge-base material listing and access.
+
+## ADDED Requirements
+
+### Requirement: Server-enforced class material boundary
+The system SHALL authorize knowledge-base material listing and access on the server using the authenticated user's class membership and the material's owning class. Client-side visibility controls MUST NOT be the sole enforcement mechanism. The authenticated class identifier SHALL be derived only from the server-validated session context.
+
+#### Scenario: Server session is the class authorization source
+- **WHEN** an authenticated user requests material data
+- **THEN** the server determines the permitted class from that user's validated session context
+
+### Requirement: Class-scoped material-list interface
+The system SHALL expose `GET /api/materials` for authenticated users. It SHALL return HTTP 200 with at least `{ "materials": [ ... ] }`, where every item belongs to the current session user's class. The endpoint SHALL NOT use any client-supplied `class_id` or equivalent parameter to expand or change the query range; such a parameter MAY be present but the response SHALL still contain only the session user's class materials. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
+
+#### Scenario: List remains scoped when a client supplies another class identifier
+- **WHEN** an authenticated class-A user calls `GET /api/materials?class_id=<class-B-id>`
+- **THEN** the response is HTTP 200 and contains only class-A material data
+
+### Requirement: Class-scoped material-detail interface
+The system SHALL expose `GET /api/materials/<material_id>` for authenticated users. For a material owned by the current session user's class, it SHALL return HTTP 200 with at least `{ "material": { "id", "display_name", "class_id", "uploader_id", "status" } }`. If the material does not exist or belongs to another class, it SHALL return the same HTTP 404 response with at least `{ "error": "not_found" }`, without material data. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
+
+#### Scenario: Member accesses own-class material detail
+- **WHEN** an authenticated user requests a material belonging to the user's session class
+- **THEN** the server returns HTTP 200 with the material data
+
+#### Scenario: A-class user requests B-class material detail
+- **WHEN** an authenticated class-A user requests a class-B material identifier
+- **THEN** the server returns HTTP 404 with no class-B material data
+
+### Requirement: Development sample classes and materials
+The system SHALL provide repeatable development seed data with at least two distinct classes and at least one material record owned by each class, so class-isolation behavior can be verified.
+
+#### Scenario: Seeded cross-class boundary is exercised
+- **WHEN** a seeded class-A user requests a seeded class-B material
+- **THEN** the server rejects the request and returns no class-B material data
+
+### Requirement: Class ownership is retained for uploaded materials
+The system SHALL associate each uploaded material record with the uploader's class context so that later authorization decisions can enforce the class boundary.
+
+#### Scenario: Teacher uploads material from class A
+- **WHEN** a teacher authenticated for class A successfully uploads a material
+- **THEN** the resulting knowledge-base material record is associated with class A
