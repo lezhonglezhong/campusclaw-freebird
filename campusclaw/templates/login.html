@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CampusClaw · Sign in</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  </head>
+  <body class="auth-page">
+    <main class="auth-card" aria-labelledby="login-title">
+      <p class="eyebrow">CampusClaw</p>
+      <h1 id="login-title">Welcome back</h1>
+      <p class="muted">Sign in to view materials for your class.</p>
+      <form id="login-form" novalidate>
+        <label for="account">Account</label>
+        <input id="account" name="account" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <p id="login-status" class="status" role="alert" aria-live="polite"></p>
+        <button type="submit">Sign in</button>
+      </form>
+    </main>
+  </body>
+</html>

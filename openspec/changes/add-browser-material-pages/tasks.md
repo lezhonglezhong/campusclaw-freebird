@@ -3,7 +3,7 @@
 ## 1. Browser session support and page shells
 
 - [x] 1.1 Implement `GET /api/me` and `POST /logout` using the existing server-validated session, with no change to existing login or material API contracts; verify `pytest tests/test_browser_session.py -q` exits successfully
-- [ ] 1.2 Add an unauthenticated `/login` HTML page and a server-protected `/materials` HTML workspace shell with shared static CSS; verify `pytest tests/test_browser_pages.py::test_login_page_is_public_and_materials_page_requires_session -q` exits successfully
+- [x] 1.2 Add an unauthenticated `/login` HTML page and a server-protected `/materials` HTML workspace shell with shared static CSS; verify `pytest tests/test_browser_pages.py::test_login_page_is_public_and_materials_page_requires_session -q` exits successfully
 
 ## 2. Interactive browser workflow
 

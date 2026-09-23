@@ -2,7 +2,7 @@
 
 from functools import wraps
 
-from flask import Blueprint, current_app, jsonify, redirect, request, session
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import check_password_hash
 
 from campusclaw.models import User
@@ -85,7 +85,13 @@ def logout():
 
 @auth_bp.get("/materials")
 def materials_page():
-    """Minimal protected browser page used by the login redirect contract."""
+    """Render the protected browser material workspace shell."""
     if session_user() is None:
         return redirect("/login")
-    return "Materials"
+    return render_template("materials.html")
+
+
+@auth_bp.get("/login")
+def login_page():
+    """Render the public browser login page."""
+    return render_template("login.html")
