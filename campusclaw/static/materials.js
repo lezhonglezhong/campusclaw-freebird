@@ -86,29 +86,27 @@ function renderTeacherUpload(user) {
   teacherUpload.innerHTML = `
     <h2 id="upload-title">上传材料</h2>
     <form id="upload-form" novalidate>
-      <label for="display-name">材料名称</label>
-      <input id="display-name" name="display_name" required>
-      <label for="content">材料正文</label>
-      <textarea id="content" name="content" rows="7" required></textarea>
+      <label for="material-file">材料名称（使用所选文件名）</label>
+      <input id="material-file" name="file" type="file" accept=".txt,.md,text/plain,text/markdown" required>
       <button type="submit">上传材料</button>
     </form>`;
   const form = teacherUpload.querySelector("#upload-form");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const displayName = form.elements.display_name.value.trim();
-    const content = form.elements.content.value.trim();
-    if (!displayName || !content) {
-      status.textContent = "请填写材料名称和正文。";
+    const file = form.elements.file.files[0];
+    if (!file) {
+      status.textContent = "请选择一个 .txt 或 .md 文件。";
       return;
     }
     const button = form.querySelector("button");
     button.disabled = true;
     status.textContent = "正在上传材料…";
     try {
+      const formData = new FormData();
+      formData.append("file", file);
       const response = await request("/api/materials", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ display_name: displayName, content }),
+        body: formData,
       });
       if (response.status === 201) {
         form.reset();

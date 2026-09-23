@@ -26,7 +26,7 @@
 
 - [x] 5.1 Implement `POST /api/materials` using the 4.1 teacher guard and server-derived class; write local content and commit a complete Material record atomically with cleanup on failure; verify `pytest tests/test_upload.py::test_teacher_upload_creates_class_owned_local_material tests/test_upload.py::test_student_upload_is_403_and_creates_no_record tests/test_upload.py::test_failed_upload_leaves_no_record_or_file -q` exits successfully
 - [x] 5.2 Verify the existing server-filtered list exposes a successful upload only to its owning class; verify `pytest tests/test_upload.py::test_successful_upload_appears_in_own_class_list -q` exits successfully
-- [ ] 5.3 Extend the upload API to accept teacher-selected non-empty `.txt` and `.md` files while retaining JSON compatibility, rejecting unsupported or empty files without residual records or files; verify `pytest tests/test_file_upload.py -q` exits successfully
+- [x] 5.3 Extend the upload API to accept teacher-selected non-empty `.txt` and `.md` files while retaining JSON compatibility, rejecting unsupported or empty files without residual records or files; verify `pytest tests/test_file_upload.py -q` exits successfully
 - [ ] 5.4 Extend idempotent seed data with documented `teacher-b` and `student-b` accounts and expose server-derived A/B class names in authenticated and material responses; verify `pytest tests/test_seed.py tests/test_auth.py tests/test_material_access.py -q` exits successfully
 - [ ] 5.5 Add teacher and student material-name search through the protected browser/API flow without weakening the session class boundary; verify `pytest tests/test_material_search.py tests/test_browser_pages.py tests/test_browser_flow.py -q` exits successfully
 

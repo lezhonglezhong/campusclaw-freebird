@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request
+from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
 from campusclaw.models import Material, User
@@ -45,12 +46,28 @@ def material_detail(user: User, material_id: int):
 @materials_bp.post("")
 @require_teacher
 def upload_material(user: User):
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify(error="invalid_request"), 400
-    display_name, content = payload.get("display_name"), payload.get("content")
-    if not isinstance(display_name, str) or not display_name or not isinstance(content, str) or not content:
-        return jsonify(error="invalid_request"), 400
+    suffix = ".txt"
+    if request.mimetype == "application/json":
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return jsonify(error="invalid_request"), 400
+        display_name, content = payload.get("display_name"), payload.get("content")
+        if not isinstance(display_name, str) or not display_name or not isinstance(content, str) or not content:
+            return jsonify(error="invalid_request"), 400
+    else:
+        uploaded_file = request.files.get("file")
+        if uploaded_file is None:
+            return jsonify(error="invalid_request"), 400
+        display_name = secure_filename(uploaded_file.filename or "")
+        suffix = Path(display_name).suffix.lower()
+        if not display_name or suffix not in {".txt", ".md"}:
+            return jsonify(error="invalid_request"), 400
+        try:
+            content = uploaded_file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            return jsonify(error="invalid_request"), 400
+        if not content:
+            return jsonify(error="invalid_request"), 400
 
     storage_dir = Path(current_app.config["MATERIAL_STORAGE_DIR"])
     temporary_path: Path | None = None
@@ -61,7 +78,7 @@ def upload_material(user: User):
         with NamedTemporaryFile(mode="w", encoding="utf-8", dir=storage_dir, delete=False) as temporary_file:
             temporary_file.write(content)
             temporary_path = Path(temporary_file.name)
-        final_path = storage_dir / f"{uuid4().hex}.txt"
+        final_path = storage_dir / f"{uuid4().hex}{suffix}"
         os.replace(temporary_path, final_path)
         material = Material(
             display_name=display_name,
