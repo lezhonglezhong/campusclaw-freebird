@@ -85,6 +85,8 @@ def test_workspace_declares_teacher_upload_and_student_read_only_contract(tmp_pa
     assert 'request("/api/materials", {' in script
     assert 'id="text-upload-form"' in script
     assert 'id="file-upload-form"' in script
+    assert 'id="file-display-name" name="display_name" required' in script
+    assert 'formData.append("display_name", displayName)' in script
     assert "材料上传成功。" in script
     assert "删除材料" in script and "下载材料" in script
     assert "你没有上传材料的权限。" in script

@@ -110,10 +110,17 @@ def upload_material(user: User):
         uploaded_file = request.files.get("file")
         if uploaded_file is None:
             return jsonify(error="invalid_request"), 400
-        display_name = secure_filename(uploaded_file.filename or "")
-        suffix = Path(display_name).suffix.lower()
-        if not display_name or suffix not in {".txt", ".md"}:
+        filename = secure_filename(uploaded_file.filename or "")
+        suffix = Path(filename).suffix.lower()
+        if not filename or suffix not in {".txt", ".md"}:
             return jsonify(error="invalid_request"), 400
+        supplied_name = request.form.get("display_name")
+        if supplied_name is None:
+            display_name = filename
+        else:
+            display_name = supplied_name.strip()
+            if not display_name:
+                return jsonify(error="invalid_request"), 400
         try:
             content = uploaded_file.read().decode("utf-8")
         except UnicodeDecodeError:
