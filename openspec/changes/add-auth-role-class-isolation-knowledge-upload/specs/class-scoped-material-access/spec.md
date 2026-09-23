@@ -35,8 +35,19 @@ The system SHALL expose `GET /api/materials/<material_id>` for authenticated use
 - **WHEN** an authenticated class-A user requests a class-B material identifier
 - **THEN** the server returns HTTP 404 with no class-B material data
 
+### Requirement: Class-scoped material download
+The system SHALL expose `GET /api/materials/<material_id>/download` for authenticated teachers and students. For a material owned by the current session user's class with available stored content, it SHALL return HTTP 200 as a download attachment containing that content and SHALL NOT expose the server storage path. If the material does not exist, belongs to another class, or has unavailable stored content, it SHALL return HTTP 404 with at least `{ "error": "not_found" }` and no material data. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
+
+#### Scenario: Student downloads own-class material
+- **WHEN** an authenticated student requests download of a material owned by the student's session class
+- **THEN** the server returns the material content as a download attachment
+
+#### Scenario: User downloads another class's material
+- **WHEN** an authenticated class-A user requests download of a class-B material identifier
+- **THEN** the server returns HTTP 404 with no class-B material data
+
 ### Requirement: Development sample classes and materials
-The system SHALL provide repeatable development seed data with at least two distinct classes and at least one material record owned by each class, so class-isolation behavior can be verified.
+The system SHALL provide repeatable development seed data with at least two distinct classes and at least one material record with available locally stored content owned by each class, so class-isolation and download behavior can be verified.
 
 #### Scenario: Seeded cross-class boundary is exercised
 - **WHEN** a seeded class-A user requests a seeded class-B material

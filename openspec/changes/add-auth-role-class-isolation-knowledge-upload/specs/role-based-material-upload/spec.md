@@ -31,3 +31,25 @@ The system SHALL write each successfully accepted teacher upload to the project'
 #### Scenario: Successful upload appears in material list
 - **WHEN** a teacher successfully uploads a material for a class
 - **THEN** a subsequent material-list request by an authorized user of that class includes the uploaded material record
+
+### Requirement: Teacher-only material deletion
+The system SHALL expose `DELETE /api/materials/<material_id>` only to an authenticated teacher and SHALL derive the permitted class only from that teacher's server-validated session. On successful deletion it SHALL return HTTP 204 and remove both the Material record and its managed local content. An authenticated student MUST receive HTTP 403 with at least `{ "error": "forbidden" }`. A missing or another-class material MUST receive HTTP 404 with at least `{ "error": "not_found" }`; neither response may remove a record or content.
+
+#### Scenario: Teacher deletes own-class material
+- **WHEN** an authenticated teacher deletes a material owned by the teacher's session class
+- **THEN** the material record and its stored content are removed and the server returns HTTP 204
+
+#### Scenario: Student attempts deletion
+- **WHEN** an authenticated student calls the material deletion API
+- **THEN** the server returns HTTP 403 and the material remains available
+
+### Requirement: Browser exposes both teacher upload methods
+The teacher material page SHALL provide a text-entry upload form with a material name and content, and a separate `.txt`/`.md` file-selection upload form. A student material page SHALL expose neither upload form.
+
+#### Scenario: Teacher sees both upload methods
+- **WHEN** an authenticated teacher loads the material page
+- **THEN** the page presents text-entry and file-selection upload controls
+
+#### Scenario: Student sees read-only material page
+- **WHEN** an authenticated student loads the material page
+- **THEN** the page does not present either upload control

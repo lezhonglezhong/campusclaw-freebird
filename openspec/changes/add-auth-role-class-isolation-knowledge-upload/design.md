@@ -14,6 +14,7 @@ The repository is at the specification-only course stage and contains no applica
 - Make runtime secrets server-configured and make the application runnable and checkable in Compose.
 - Supply repeatable local seed data for two classes, one teacher and one student in each class, and class-owned materials.
 - Support browser-selected plain-text and Markdown uploads and class-scoped material-name search.
+- Let class members download stored material content and let teachers delete content belonging to their session class.
 
 **Non-Goals:**
 
@@ -43,6 +44,10 @@ On a valid teacher upload, derive the teacher's class and uploader identity from
 
 Keep the established JSON `{ "display_name", "content" }` upload form for API compatibility. Add a multipart form with one selected `.txt` or `.md` file; validate the extension case-insensitively, use its safe original filename as the material display name, and reject unsupported or empty files with HTTP 400. The server stores only server-generated paths and never trusts a browser-provided path. The class material list queries `Material` through the server-derived class filter and can apply an optional case-insensitive substring filter only to `display_name`.
 
+The browser renders both forms for a teacher: text entry sends the established JSON payload and file selection sends multipart form data. A material detail control downloads through a server route, not by exposing `content_path`. The download route uses the same session-class lookup as detail access and sends the stored content as an attachment using the safe display filename.
+
+Teacher deletion uses the same server-derived teacher role and class boundary. It looks up the material by identifier and session class, stages its local file outside its final name, deletes the database record, and removes the staged file only after the database transaction succeeds; on a database failure it restores the staged file. Missing or cross-class records return the same 404 response. Seed initialization writes actual local content files for seeded records so their download behavior is demonstrable.
+
 Storing material only in application-local metadata was rejected because it would not meet the knowledge-base persistence requirement. Introducing an external knowledge-base product was rejected for this course scope; the local database record and managed content storage preserve the record and list contracts.
 
 ### Minimum HTTP interface
@@ -55,7 +60,9 @@ The implementation uses JSON request/response bodies for the APIs below. Error r
 | Protected page | `GET /materials` | none | `200` page for an authenticated user | unauthenticated: `302` to `/login` |
 | Material list | `GET /api/materials` | optional `q` filters only material `display_name`; any `class_id` is ignored for scope | `200 { "materials": [...] }`, all items in session class | `401` unauthenticated |
 | Material detail | `GET /api/materials/<material_id>` | path identifier | `200 { "material": { "id", "display_name", "class_id", "class_name", "uploader_id", "status" } }` | `401` unauthenticated; `404 { "error": "not_found" }` for missing or cross-class material |
+| Material download | `GET /api/materials/<material_id>/download` | path identifier | `200` attachment containing the material content | `401` unauthenticated; `404 { "error": "not_found" }` for missing, cross-class, or unavailable content |
 | Teacher upload | `POST /api/materials` | existing JSON `{ "display_name", "content" }`, or multipart one `.txt`/`.md` file | `201 { "material": { "id", "display_name", "class_id", "class_name", "uploader_id", "status" } }` | `400` malformed/unsupported/empty input; `401` unauthenticated; `403 { "error": "forbidden" }` student |
+| Teacher deletion | `DELETE /api/materials/<material_id>` | path identifier | `204`, removes material record and stored content | `401` unauthenticated; `403 { "error": "forbidden" }` student; `404 { "error": "not_found" }` missing or cross-class material |
 | Health | `GET /health` | none, unauthenticated | `200 { "status": "ok" }` | no application-level failure contract beyond normal server errors |
 
 Logout and a client-visible session-inspection endpoint are deliberately not introduced: neither is necessary to satisfy the current proposal or authorization flows.
