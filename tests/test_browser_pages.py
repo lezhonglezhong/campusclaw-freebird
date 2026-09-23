@@ -37,8 +37,21 @@ def test_login_page_declares_safe_interactive_contract(tmp_path: Path) -> None:
     assert b"/static/login.js" in page.data
     assert 'fetch("/login"' in script
     assert 'window.location.assign("/materials")' in script
-    assert "Account or password is incorrect." in script
+    assert "账号或密码错误。" in script
     assert "localStorage" not in script
+
+
+def test_login_page_uses_simplified_chinese(tmp_path: Path) -> None:
+    app = make_app(tmp_path)
+    page = app.test_client().get("/login")
+    script = (Path(app.static_folder) / "login.js").read_text()
+
+    assert b'lang="zh-CN"' in page.data
+    assert "欢迎登录" in page.get_data(as_text=True)
+    assert "账号" in page.get_data(as_text=True)
+    assert "密码" in page.get_data(as_text=True)
+    assert "正在登录…" in script
+    assert "暂时无法登录，请稍后重试。" in script
 
 
 def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: Path) -> None:
