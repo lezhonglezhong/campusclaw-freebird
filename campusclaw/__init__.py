@@ -6,6 +6,7 @@ from typing import Mapping
 from flask import Flask
 
 from campusclaw.db import init_db
+from campusclaw.seed import register_seed_command
 
 
 def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
@@ -22,4 +23,5 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
 
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
+    register_seed_command(app)
     return app

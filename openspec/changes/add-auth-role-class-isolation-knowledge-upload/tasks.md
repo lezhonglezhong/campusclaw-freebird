@@ -7,7 +7,7 @@
 
 ## 2. Development seed data
 
-- [ ] 2.1 Implement an idempotent development/test seed command or initialization path that creates classes A and B, named teacher and student test accounts with documented test credentials, and one class-owned material per class; verify `pytest tests/test_seed.py::test_seed_is_idempotent -q` exits successfully
+- [x] 2.1 Implement an idempotent development/test seed command or initialization path that creates classes A and B, named teacher and student test accounts with documented test credentials, and one class-owned material per class; verify `pytest tests/test_seed.py::test_seed_is_idempotent -q` exits successfully
 - [ ] 2.2 Route seeded account credentials through the normal password-hashing path; verify `pytest tests/test_seed.py::test_seeded_passwords_are_hashed -q` exits successfully
 
 ## 3. Login and session security
