@@ -16,3 +16,7 @@ The system SHALL expose `GET /api/materials/retrieve?q=<query>` to authenticated
 #### Scenario: Same query cannot cross class boundaries
 - **WHEN** a class-A user searches text occurring only in class-B material
 - **THEN** the response returns an empty result list
+
+#### Scenario: User retrieves Chinese content
+- **WHEN** an authenticated user searches a Chinese phrase contained in an own-class material
+- **THEN** the response contains that material's matching result

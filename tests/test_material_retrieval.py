@@ -14,3 +14,12 @@ def test_retrieve_returns_class_scoped_provenance(tmp_path):
     assert result["class_name"] == "A"
     assert result["download_url"].startswith("/api/materials/")
     assert "content_path" not in result
+
+
+def test_retrieve_falls_back_for_chinese_content(tmp_path):
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'chinese.sqlite3'}", "SESSION_SECRET": "test-secret"})
+    seed_data(app)
+    client = app.test_client()
+    client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    client.post("/api/materials", json={"display_name": "中文", "content": "量子物理课程"})
+    assert client.get("/api/materials/retrieve?q=量子物理").json["results"][0]["display_name"] == "中文"

@@ -35,9 +35,19 @@ def retrieve_materials(user: User):
         """), {"query": query, "class_id": user.class_id}).all()
     except Exception:
         return jsonify(error="invalid_query"), 400
+    if not rows:
+        rows = session.execute(text("""
+            SELECT m.id, m.display_name, m.class_id, c.name, m.uploader_id,
+                   material_retrieval.content
+            FROM material_retrieval JOIN materials m ON m.id = material_retrieval.material_id
+            JOIN classes c ON c.id = m.class_id
+            WHERE material_retrieval.class_id = :class_id
+              AND material_retrieval.content LIKE :pattern
+            ORDER BY m.id
+        """), {"class_id": user.class_id, "pattern": f"%{query}%"}).all()
     return jsonify(results=[{
         "material_id": row[0], "display_name": row[1], "class_id": row[2],
-        "class_name": row[3], "uploader_id": row[4], "excerpt": row[5],
+        "class_name": row[3], "uploader_id": row[4], "excerpt": row[5][:240],
         "download_url": f"/api/materials/{row[0]}/download",
     } for row in rows])
 
