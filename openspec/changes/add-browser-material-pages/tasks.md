@@ -14,4 +14,4 @@
 ## 3. Browser-flow integration and validation
 
 - [x] 3.1 Add end-to-end Flask-client coverage for login-session recovery, protected-page redirect, logout, own-class workspace data, teacher upload, and student read-only behavior; verify `pytest tests/test_browser_flow.py -q` exits successfully
-- [ ] 3.2 Run the complete regression suite and strictly validate the frontend change; verify `pytest -q && openspec validate add-browser-material-pages --strict` exits successfully
+- [x] 3.2 Run the complete regression suite and strictly validate the frontend change; verify `pytest -q && openspec validate add-browser-material-pages --strict` exits successfully
