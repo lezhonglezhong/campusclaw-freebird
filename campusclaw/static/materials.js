@@ -3,8 +3,10 @@ const status = document.querySelector("#workspace-status");
 const list = document.querySelector("#material-list");
 const detail = document.querySelector("#material-detail");
 const detailFields = document.querySelector("#material-detail-fields");
+const detailActions = document.querySelector("#material-actions");
 const teacherUpload = document.querySelector("#teacher-upload");
 const searchForm = document.querySelector("#material-search-form");
+let currentUser;
 
 function roleLabel(role) {
   return { teacher: "教师", student: "学生" }[role] || role;
@@ -31,6 +33,7 @@ async function request(path, options) {
 
 function showDetail(material) {
   detailFields.replaceChildren();
+  detailActions.replaceChildren();
   for (const [label, value] of Object.entries({
     "材料编号": material.id,
     "材料名称": material.display_name,
@@ -43,6 +46,36 @@ function showDetail(material) {
     const description = document.createElement("dd");
     description.textContent = String(value);
     detailFields.append(term, description);
+  }
+  const download = document.createElement("a");
+  download.href = `/api/materials/${material.id}/download`;
+  download.textContent = "下载材料";
+  detailActions.append(download);
+  if (currentUser.role === "teacher") {
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "删除材料";
+    remove.addEventListener("click", async () => {
+      if (!window.confirm(`确定删除“${material.display_name}”吗？`)) return;
+      remove.disabled = true;
+      try {
+        const response = await request(`/api/materials/${material.id}`, { method: "DELETE" });
+        if (response.status === 204) {
+          detail.hidden = true;
+          await loadMaterials();
+          status.textContent = "材料已删除。";
+        } else if (response.status === 403) {
+          status.textContent = "你没有删除材料的权限。";
+        } else {
+          status.textContent = "删除材料失败，请稍后重试。";
+        }
+      } catch (error) {
+        if (error.message !== "unauthorized") status.textContent = "删除材料失败，请稍后重试。";
+      } finally {
+        remove.disabled = false;
+      }
+    });
+    detailActions.append(" ", remove);
   }
   detail.hidden = false;
 }
@@ -88,31 +121,70 @@ function renderTeacherUpload(user) {
   teacherUpload.hidden = false;
   teacherUpload.innerHTML = `
     <h2 id="upload-title">上传材料</h2>
-    <form id="upload-form" novalidate>
+    <form id="text-upload-form" novalidate>
+      <h3>直接输入文字</h3>
+      <label for="display-name">材料名称</label>
+      <input id="display-name" name="display_name" required>
+      <label for="content">材料正文</label>
+      <textarea id="content" name="content" rows="7" required></textarea>
+      <button type="submit">上传文字材料</button>
+    </form>
+    <form id="file-upload-form" novalidate>
+      <h3>选择文件上传</h3>
       <label for="material-file">材料名称（使用所选文件名）</label>
       <input id="material-file" name="file" type="file" accept=".txt,.md,text/plain,text/markdown" required>
-      <button type="submit">上传材料</button>
+      <button type="submit">上传文件材料</button>
     </form>`;
-  const form = teacherUpload.querySelector("#upload-form");
-  form.addEventListener("submit", async (event) => {
+  const textForm = teacherUpload.querySelector("#text-upload-form");
+  textForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const file = form.elements.file.files[0];
+    const displayName = textForm.elements.display_name.value.trim();
+    const content = textForm.elements.content.value.trim();
+    if (!displayName || !content) {
+      status.textContent = "请填写材料名称和正文。";
+      return;
+    }
+    const button = textForm.querySelector("button");
+    button.disabled = true;
+    status.textContent = "正在上传材料…";
+    try {
+      const response = await request("/api/materials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ display_name: displayName, content }),
+      });
+      if (response.status === 201) {
+        textForm.reset();
+        await loadMaterials();
+        status.textContent = "材料上传成功。";
+      } else if (response.status === 403) {
+        status.textContent = "你没有上传材料的权限。";
+      } else {
+        status.textContent = "上传材料失败，请稍后重试。";
+      }
+    } catch (error) {
+      if (error.message !== "unauthorized") status.textContent = "上传材料失败，请稍后重试。";
+    } finally {
+      button.disabled = false;
+    }
+  });
+  const fileForm = teacherUpload.querySelector("#file-upload-form");
+  fileForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const file = fileForm.elements.file.files[0];
     if (!file) {
       status.textContent = "请选择一个 .txt 或 .md 文件。";
       return;
     }
-    const button = form.querySelector("button");
+    const button = fileForm.querySelector("button");
     button.disabled = true;
     status.textContent = "正在上传材料…";
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await request("/api/materials", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await request("/api/materials", { method: "POST", body: formData });
       if (response.status === 201) {
-        form.reset();
+        fileForm.reset();
         await loadMaterials();
         status.textContent = "材料上传成功。";
       } else if (response.status === 403) {
@@ -133,6 +205,7 @@ async function initializeWorkspace() {
     const response = await request("/api/me");
     if (!response.ok) throw new Error("identity_failed");
     const { user } = await response.json();
+    currentUser = user;
     userContext.textContent = `${user.account} · ${roleLabel(user.role)} · ${user.class_name} 班`;
     renderTeacherUpload(user);
     await loadMaterials();

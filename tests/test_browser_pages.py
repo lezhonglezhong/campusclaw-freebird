@@ -67,6 +67,8 @@ def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: 
     assert 'request("/api/materials")' in script
     assert 'new URLSearchParams({ q: query })' in script
     assert 'request(`/api/materials/${id}`)' in script
+    assert 'download.textContent = "下载材料"' in script
+    assert 'method: "DELETE"' in script
     assert "该材料已不存在或无权访问。" in script
     assert 'window.location.replace("/login")' in script
 
@@ -81,7 +83,10 @@ def test_workspace_declares_teacher_upload_and_student_read_only_contract(tmp_pa
 
     assert 'if (user.role !== "teacher") return;' in script
     assert 'request("/api/materials", {' in script
+    assert 'id="text-upload-form"' in script
+    assert 'id="file-upload-form"' in script
     assert "材料上传成功。" in script
+    assert "删除材料" in script and "下载材料" in script
     assert "你没有上传材料的权限。" in script
     assert b'id="upload-form"' not in student.get("/materials").data
     assert b'id="upload-form"' not in teacher.get("/materials").data

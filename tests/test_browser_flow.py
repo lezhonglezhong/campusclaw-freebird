@@ -46,7 +46,10 @@ def test_teacher_browser_flow_uploads_and_lists_own_class_material(tmp_path: Pat
     listed = teacher.get("/api/materials")
     assert uploaded.json["material"]["id"] in {item["id"] for item in listed.json["materials"]}
     assert {item["class_id"] for item in listed.json["materials"]} == {1}
-    assert app.extensions["sqlalchemy"]["session"].get(Material, uploaded.json["material"]["id"]) is not None
+    material_id = uploaded.json["material"]["id"]
+    assert teacher.get(f"/api/materials/{material_id}/download").data == b"content"
+    assert teacher.delete(f"/api/materials/{material_id}").status_code == 204
+    assert app.extensions["sqlalchemy"]["session"].get(Material, material_id) is None
 
 
 def test_student_browser_flow_is_read_only_and_cannot_upload(tmp_path: Path) -> None:
