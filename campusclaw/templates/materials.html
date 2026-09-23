@@ -19,6 +19,11 @@
       <p id="workspace-status" class="status" role="status" aria-live="polite"></p>
       <section aria-labelledby="material-list-title">
         <h2 id="material-list-title">材料列表</h2>
+        <form id="material-search-form" role="search">
+          <label for="material-search">按材料名称搜索</label>
+          <input id="material-search" name="q" type="search" autocomplete="off">
+          <button type="submit">搜索</button>
+        </form>
         <ul id="material-list" class="material-list"></ul>
       </section>
       <section id="material-detail" class="detail" hidden aria-labelledby="material-detail-title">

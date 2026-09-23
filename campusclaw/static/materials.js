@@ -4,6 +4,7 @@ const list = document.querySelector("#material-list");
 const detail = document.querySelector("#material-detail");
 const detailFields = document.querySelector("#material-detail-fields");
 const teacherUpload = document.querySelector("#teacher-upload");
+const searchForm = document.querySelector("#material-search-form");
 
 function roleLabel(role) {
   return { teacher: "教师", student: "学生" }[role] || role;
@@ -63,8 +64,10 @@ async function loadDetail(id) {
   }
 }
 
-async function loadMaterials() {
-  const response = await request("/api/materials");
+async function loadMaterials(query = "") {
+  const response = query
+    ? await request(`/api/materials?${new URLSearchParams({ q: query })}`)
+    : await request("/api/materials");
   if (!response.ok) throw new Error("list_failed");
   const { materials } = await response.json();
   list.replaceChildren();
@@ -77,7 +80,7 @@ async function loadMaterials() {
     item.append(button);
     list.append(item);
   }
-  if (!materials.length) status.textContent = "当前班级暂无材料。";
+  if (!materials.length) status.textContent = query ? "未找到名称匹配的材料。" : "当前班级暂无材料。";
 }
 
 function renderTeacherUpload(user) {
@@ -141,6 +144,11 @@ async function initializeWorkspace() {
 document.querySelector("#logout-button").addEventListener("click", async () => {
   await fetch("/logout", { method: "POST" });
   redirectToLogin();
+});
+
+searchForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await loadMaterials(searchForm.elements.q.value.trim());
 });
 
 initializeWorkspace();

@@ -30,7 +30,11 @@ def material_payload(material: Material) -> dict[str, int | str]:
 @require_authenticated_api
 def list_materials(user: User):
     db_session = current_app.extensions["sqlalchemy"]["session"]
-    materials = db_session.query(Material).filter_by(class_id=user.class_id).order_by(Material.id).all()
+    query = request.args.get("q", "")
+    materials_query = db_session.query(Material).filter_by(class_id=user.class_id)
+    if query:
+        materials_query = materials_query.filter(Material.display_name.ilike(f"%{query}%"))
+    materials = materials_query.order_by(Material.id).all()
     return jsonify(materials=[material_payload(material) for material in materials])
 
 

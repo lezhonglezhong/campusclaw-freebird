@@ -26,6 +26,7 @@ def test_login_page_is_public_and_materials_page_requires_session(tmp_path: Path
     workspace = authenticated.get("/materials")
     assert workspace.status_code == 200
     assert b'id="material-list"' in workspace.data
+    assert b'id="material-search-form"' in workspace.data
     assert b'/static/app.css' in workspace.data
 
 
@@ -64,6 +65,7 @@ def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: 
     assert b"/static/materials.js" in page.data
     assert 'request("/api/me")' in script
     assert 'request("/api/materials")' in script
+    assert 'new URLSearchParams({ q: query })' in script
     assert 'request(`/api/materials/${id}`)' in script
     assert "该材料已不存在或无权访问。" in script
     assert 'window.location.replace("/login")' in script
@@ -99,5 +101,6 @@ def test_material_workspace_uses_simplified_chinese(tmp_path: Path) -> None:
     assert "材料详情" in page
     assert "正在加载材料…" in script
     assert "材料名称" in script
+    assert "按材料名称搜索" in page
     assert "材料上传成功。" in script
     assert "教师" in script and "学生" in script
