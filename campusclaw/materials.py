@@ -20,6 +20,7 @@ def material_payload(material: Material) -> dict[str, int | str]:
         "id": material.id,
         "display_name": material.display_name,
         "class_id": material.class_id,
+        "class_name": material.class_.name,
         "uploader_id": material.uploader_id,
         "status": material.status,
     }

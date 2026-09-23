@@ -13,7 +13,13 @@ auth_bp = Blueprint("auth", __name__)
 
 def user_payload(user: User) -> dict[str, int | str]:
     """Return the public identity fields specified by the login contract."""
-    return {"id": user.id, "account": user.account, "role": user.role, "class_id": user.class_id}
+    return {
+        "id": user.id,
+        "account": user.account,
+        "role": user.role,
+        "class_id": user.class_id,
+        "class_name": user.class_.name,
+    }
 
 
 def session_user() -> User | None:

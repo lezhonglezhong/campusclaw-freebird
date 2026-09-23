@@ -33,7 +33,7 @@ function showDetail(material) {
   for (const [label, value] of Object.entries({
     "材料编号": material.id,
     "材料名称": material.display_name,
-    "班级编号": material.class_id,
+    "班级": material.class_name,
     "上传者编号": material.uploader_id,
     "入库状态": materialStatusLabel(material.status),
   })) {
@@ -130,7 +130,7 @@ async function initializeWorkspace() {
     const response = await request("/api/me");
     if (!response.ok) throw new Error("identity_failed");
     const { user } = await response.json();
-    userContext.textContent = `${user.account} · ${roleLabel(user.role)} · ${user.class_id} 班`;
+    userContext.textContent = `${user.account} · ${roleLabel(user.role)} · ${user.class_name} 班`;
     renderTeacherUpload(user);
     await loadMaterials();
   } catch (error) {

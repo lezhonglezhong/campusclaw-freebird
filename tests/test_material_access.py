@@ -21,11 +21,13 @@ def test_class_a_user_lists_and_reads_class_a_material(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert response.json["materials"]
     assert {item["class_id"] for item in response.json["materials"]} == {1}
+    assert {item["class_name"] for item in response.json["materials"]} == {"A"}
 
     material = app.extensions["sqlalchemy"]["session"].query(Material).filter_by(class_id=1).one()
     response = client.get(f"/api/materials/{material.id}")
     assert response.status_code == 200
     assert response.json["material"]["id"] == material.id
+    assert response.json["material"]["class_name"] == "A"
 
 
 def test_class_id_parameter_cannot_expand_list_scope(tmp_path: Path) -> None:

@@ -10,5 +10,7 @@ CampusClaw 是“互联网软件技术开发与实践”课程的三人小组学
 
 执行 `flask --app campusclaw seed` 可重复创建本地示例数据。账号
 `teacher-a`（密码 `teacher-a-password`）是 A 班教师；账号 `student-a`
-（密码 `student-a-password`）是 A 班学生。示例还会创建 A、B 两个班级，
-每班各一条材料记录。
+（密码 `student-a-password`）是 A 班学生；账号 `teacher-b`（密码
+`teacher-b-password`）是 B 班教师；账号 `student-b`（密码
+`student-b-password`）是 B 班学生。示例还会创建 A、B 两个班级，每班各一条
+由本班教师上传的材料记录。

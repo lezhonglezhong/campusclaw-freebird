@@ -22,11 +22,22 @@ def test_login_contract_and_password_hashing(tmp_path: Path) -> None:
     response = client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
 
     assert response.status_code == 200
-    assert response.json["user"] == {"id": 1, "account": "teacher-a", "role": "teacher", "class_id": 1}
+    assert response.json["user"] == {
+        "id": 1, "account": "teacher-a", "role": "teacher", "class_id": 1, "class_name": "A",
+    }
     with client.session_transaction() as session:
         assert session["user_id"] == 1
     user = app.extensions["sqlalchemy"]["session"].query(User).filter_by(account="teacher-a").one()
     assert user.password_hash != SEED_ACCOUNTS["teacher-a"]["password"]
+
+
+def test_b_class_seeded_accounts_can_log_in(tmp_path: Path) -> None:
+    _app, client = make_client(tmp_path)
+    response = client.post("/login", json={"account": "teacher-b", "password": "teacher-b-password"})
+    assert response.status_code == 200
+    assert response.json["user"]["role"] == "teacher"
+    assert response.json["user"]["class_name"] == "B"
+    assert client.get("/api/me").json["user"]["account"] == "teacher-b"
 
 
 def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tmp_path: Path) -> None:

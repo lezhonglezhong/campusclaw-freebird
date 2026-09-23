@@ -15,9 +15,15 @@ def test_seed_is_idempotent(tmp_path: Path) -> None:
     session = app.extensions["sqlalchemy"]["session"]
 
     assert [item.name for item in session.query(Class).order_by(Class.name)] == ["A", "B"]
-    assert session.query(User).count() == 2
+    assert session.query(User).count() == 4
     assert session.query(Material).count() == 2
     assert {item.class_.name for item in session.query(Material)} == {"A", "B"}
+    assert {item.account: item.class_.name for item in session.query(User)} == {
+        "teacher-a": "A", "student-a": "A", "teacher-b": "B", "student-b": "B",
+    }
+    assert {item.class_.name: item.uploader.account for item in session.query(Material)} == {
+        "A": "teacher-a", "B": "teacher-b",
+    }
 
 
 def test_seeded_passwords_are_hashed(tmp_path: Path) -> None:

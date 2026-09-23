@@ -9,6 +9,8 @@ from campusclaw.models import Class, Material, User
 SEED_ACCOUNTS = {
     "teacher-a": {"password": "teacher-a-password", "role": "teacher", "class_name": "A"},
     "student-a": {"password": "student-a-password", "role": "student", "class_name": "A"},
+    "teacher-b": {"password": "teacher-b-password", "role": "teacher", "class_name": "B"},
+    "student-b": {"password": "student-b-password", "role": "student", "class_name": "B"},
 }
 
 
@@ -36,10 +38,10 @@ def seed_data(app: Flask) -> None:
             )
     session.flush()
 
-    teacher = session.query(User).filter_by(account="teacher-a").one()
     for class_name in ("A", "B"):
         class_ = classes[class_name]
         if session.query(Material).filter_by(class_id=class_.id).first() is None:
+            teacher = session.query(User).filter_by(account=f"teacher-{class_name.lower()}").one()
             session.add(
                 Material(
                     display_name=f"Class {class_name} sample material",
