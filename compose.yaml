@@ -1,0 +1,7 @@
+services:
+  campusclaw:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}

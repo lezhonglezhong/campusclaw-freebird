@@ -29,7 +29,7 @@
 
 ## 6. Docker Compose and health checks
 
-- [ ] 6.1 Add Docker Compose configuration and `.env.example` documentation for required `SESSION_SECRET` without a real secret; verify `SESSION_SECRET=test-only-secret docker compose config` exits successfully and `pytest tests/test_config.py::test_compose_and_example_contain_no_real_secret -q` exits successfully
+- [x] 6.1 Add Docker Compose configuration and `.env.example` documentation for required `SESSION_SECRET` without a real secret; verify `SESSION_SECRET=test-only-secret docker compose config` exits successfully and `pytest tests/test_config.py::test_compose_and_example_contain_no_real_secret -q` exits successfully
 - [ ] 6.2 Implement unauthenticated `GET /health` and configure the Compose healthcheck to call it; verify `pytest tests/test_health.py -q` and `SESSION_SECRET=test-only-secret docker compose up --build -d && curl -fsS http://localhost:8000/health` succeed
 
 ## 7. Validation
