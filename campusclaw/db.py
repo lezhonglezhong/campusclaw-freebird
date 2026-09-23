@@ -23,6 +23,9 @@ def init_db(app: Flask) -> None:
     from campusclaw import models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    from campusclaw.retrieval import initialize_retrieval_index
+    initialize_retrieval_index(session)
+    session.commit()
 
     @app.teardown_appcontext
     def remove_session(_exception: BaseException | None = None) -> None:

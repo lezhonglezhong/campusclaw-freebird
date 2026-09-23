@@ -6,6 +6,7 @@ from flask import Flask
 from werkzeug.security import generate_password_hash
 
 from campusclaw.models import Class, Material, User
+from campusclaw.retrieval import index_material
 
 
 SEED_ACCOUNTS = {
@@ -51,18 +52,19 @@ def seed_data(app: Flask) -> None:
         seed_path.write_text(seed_content, encoding="utf-8")
         material = session.query(Material).filter_by(class_id=class_.id, display_name=display_name).one_or_none()
         if material is None:
-            session.add(
-                Material(
-                    display_name=display_name,
-                    class_=class_,
-                    uploader=teacher,
-                    content_path=str(seed_path),
-                    status="ready",
-                )
+            material = Material(
+                display_name=display_name,
+                class_=class_,
+                uploader=teacher,
+                content_path=str(seed_path),
+                status="ready",
             )
+            session.add(material)
         else:
             material.uploader = teacher
             material.content_path = str(seed_path)
+        session.flush()
+        index_material(session, material, seed_content)
     session.commit()
 
 

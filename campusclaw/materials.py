@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
 from campusclaw.models import Material, User
+from campusclaw.retrieval import index_material, remove_material_from_index
 
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/api/materials")
@@ -79,6 +80,7 @@ def delete_material(user: User, material_id: int):
             staged_path = content_path.with_name(f".{content_path.name}.{uuid4().hex}.deleting")
             os.replace(content_path, staged_path)
         db_session.delete(material)
+        remove_material_from_index(db_session, material.id)
         db_session.commit()
         if staged_path is not None:
             staged_path.unlink()
@@ -147,6 +149,8 @@ def upload_material(user: User):
             status="ready",
         )
         db_session.add(material)
+        db_session.flush()
+        index_material(db_session, material, content)
         db_session.commit()
     except OSError:
         db_session.rollback()
