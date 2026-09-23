@@ -12,13 +12,14 @@ The repository is at the specification-only course stage and contains no applica
 - Enforce teacher upload permissions and class material boundaries in server request handling.
 - Persist a class-owned local knowledge-base material record only after an authorized teacher upload and complete local content write.
 - Make runtime secrets server-configured and make the application runnable and checkable in Compose.
-- Supply repeatable local seed data for two classes, teacher/student accounts, and class-owned materials.
+- Supply repeatable local seed data for two classes, one teacher and one student in each class, and class-owned materials.
+- Support browser-selected plain-text and Markdown uploads and class-scoped material-name search.
 
 **Non-Goals:**
 
 - Account self-registration, password recovery, third-party sign-in, or account administration.
-- Cross-class sharing, multi-class enrollment, or delegation of upload privileges.
-- Defining file-type limits, malware scanning, full-text retrieval, vector retrieval, embeddings, RAG, or knowledge-base question answering.
+- Cross-class sharing, multi-class enrollment, delegation of upload privileges, or teacher selection of a class other than their own.
+- Malware scanning, full-text retrieval, vector retrieval, embeddings, RAG, or knowledge-base question answering.
 
 ## Decisions
 
@@ -38,7 +39,9 @@ Centralizing these checks prevents an API from accidentally relying on hidden UI
 
 Model `Class`, `User`, and `Material` in SQLite: a user has one role and belongs to one class; a material has one owning class and one uploader. `Material` contains at least a stable identifier, `display_name`, owning `class_id`, `uploader_id`, local `content_path`/ingestion reference, ingestion `status`, and creation timestamp. For this course project, the Material persistence layer plus content files under the configured, non-source-controlled local `MATERIAL_STORAGE_DIR` form the knowledge-base implementation; no external service is used.
 
-On a valid teacher upload, derive the teacher's class from the server session, validate the role and request fields, write content first to a temporary file in `MATERIAL_STORAGE_DIR`, atomically promote it to its stable final path, and then create and commit the successful `Material` database record. A failure before database commit removes any temporary or promoted file and rolls back the database transaction; a failure while writing content creates no Material record. Therefore no incomplete Material record or unreferenced residual content file remains after a failed upload. The class material list queries `Material` through the server-derived class filter.
+On a valid teacher upload, derive the teacher's class and uploader identity from the server session, validate the role and request fields, write content first to a temporary file in `MATERIAL_STORAGE_DIR`, atomically promote it to its stable final path, and then create and commit the successful `Material` database record. A failure before database commit removes any temporary or promoted file and rolls back the database transaction; a failure while writing content creates no Material record. Therefore no incomplete Material record or unreferenced residual content file remains after a failed upload. The client cannot set `class_id` or `uploader_id`.
+
+Keep the established JSON `{ "display_name", "content" }` upload form for API compatibility. Add a multipart form with one selected `.txt` or `.md` file; validate the extension case-insensitively, use its safe original filename as the material display name, and reject unsupported or empty files with HTTP 400. The server stores only server-generated paths and never trusts a browser-provided path. The class material list queries `Material` through the server-derived class filter and can apply an optional case-insensitive substring filter only to `display_name`.
 
 Storing material only in application-local metadata was rejected because it would not meet the knowledge-base persistence requirement. Introducing an external knowledge-base product was rejected for this course scope; the local database record and managed content storage preserve the record and list contracts.
 
@@ -48,18 +51,18 @@ The implementation uses JSON request/response bodies for the APIs below. Error r
 
 | Operation | Method and path | Request | Success | Main failures |
 | --- | --- | --- | --- | --- |
-| Login | `POST /login` | `{ "account", "password" }`, both non-empty | `200`, `{ "user": { "id", "account", "role", "class_id" } }`, establishes session | `400` malformed input; `401 { "error": "invalid_credentials" }` |
+| Login | `POST /login` | `{ "account", "password" }`, both non-empty | `200`, `{ "user": { "id", "account", "role", "class_id", "class_name" } }`, establishes session | `400` malformed input; `401 { "error": "invalid_credentials" }` |
 | Protected page | `GET /materials` | none | `200` page for an authenticated user | unauthenticated: `302` to `/login` |
-| Material list | `GET /api/materials` | none; any client `class_id` is ignored for scope | `200 { "materials": [...] }`, all items in session class | `401` unauthenticated |
-| Material detail | `GET /api/materials/<material_id>` | path identifier | `200 { "material": { "id", "display_name", "class_id", "uploader_id", "status" } }` | `401` unauthenticated; `404 { "error": "not_found" }` for missing or cross-class material |
-| Teacher upload | `POST /api/materials` | `{ "display_name", "content" }`, both non-empty | `201 { "material": { "id", "display_name", "class_id", "uploader_id", "status" } }` | `400` malformed input; `401` unauthenticated; `403 { "error": "forbidden" }` student |
+| Material list | `GET /api/materials` | optional `q` filters only material `display_name`; any `class_id` is ignored for scope | `200 { "materials": [...] }`, all items in session class | `401` unauthenticated |
+| Material detail | `GET /api/materials/<material_id>` | path identifier | `200 { "material": { "id", "display_name", "class_id", "class_name", "uploader_id", "status" } }` | `401` unauthenticated; `404 { "error": "not_found" }` for missing or cross-class material |
+| Teacher upload | `POST /api/materials` | existing JSON `{ "display_name", "content" }`, or multipart one `.txt`/`.md` file | `201 { "material": { "id", "display_name", "class_id", "class_name", "uploader_id", "status" } }` | `400` malformed/unsupported/empty input; `401` unauthenticated; `403 { "error": "forbidden" }` student |
 | Health | `GET /health` | none, unauthenticated | `200 { "status": "ok" }` | no application-level failure contract beyond normal server errors |
 
 Logout and a client-visible session-inspection endpoint are deliberately not introduced: neither is necessary to satisfy the current proposal or authorization flows.
 
 ### Repeatable development seed data
 
-Provide an idempotent seed command or initialization path that creates at least classes A and B, a teacher and student for the exercised roles, and one material per class. Seed credentials flow through the same password-hashing path as normal credentials; sample data exists only for local development and test verification.
+Provide an idempotent seed command or initialization path that creates classes A and B, `teacher-a` and `student-a` in class A, `teacher-b` and `student-b` in class B, and one material per class. Seed credentials flow through the same password-hashing path as normal credentials; sample data exists only for local development and test verification.
 
 Hard-coding plaintext passwords directly in the database was rejected because it conflicts with the credential-storage requirement. Manually created test data was rejected because it makes the acceptance scenarios difficult to reproduce.
 

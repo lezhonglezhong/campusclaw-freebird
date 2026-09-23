@@ -10,7 +10,9 @@ CampusClaw needs a secure, class-scoped foundation before teaching materials can
 - Add role-based authorization that allows only teachers to upload teaching materials and rejects student upload API requests.
 - Add server-side class isolation for teaching-material access so users cannot retrieve materials belonging to another class.
 - Add teacher material upload to the knowledge base and class-scoped material listing that includes successfully uploaded records.
-- Seed representative teacher, student, class, and teaching-material records so the login, role, and class-boundary workflows can be verified in a fresh local deployment.
+- Add browser-selectable `.txt` and `.md` material-file uploads while retaining the established JSON upload contract for compatibility.
+- Add class-scoped material-name search and show a human-readable class name (such as A or B) without exposing client control over class ownership.
+- Seed representative A- and B-class teacher and student accounts, classes, and teaching-material records so login, role, class-boundary, and B-class workflows can be verified in a fresh local deployment.
 - Require password hashes rather than plaintext passwords, server-only environment variables for secrets, Docker Compose startup, and a `GET /health` health endpoint.
 - Use the project's local `Material` persistence and managed local content storage as the course project's knowledge-base implementation; external knowledge-base services, embeddings, and retrieval are not introduced.
 
@@ -32,11 +34,11 @@ CampusClaw needs a secure, class-scoped foundation before teaching materials can
 - Knowledge-base retrieval question answering or a conversational assistant.
 - Assignment submission, grading, feedback, or grade management.
 - Single sign-on, third-party identity integration, production high availability, or horizontal scaling.
-- Cross-class material sharing, multi-class enrollment, and teacher account administration.
+- Cross-class material sharing, multi-class enrollment, teacher account administration, and teacher selection of another class for an upload.
 - External knowledge-base services, vector retrieval, embeddings, RAG, and material question answering.
 
 ## Impact
 
 - Adds authentication, authorization, class membership, material/knowledge-base persistence, and protected web/API routes.
-- Defines an upload API that must reject unauthorized student requests and class-scoped material query behavior.
+- Extends the upload API with safe text/Markdown file input, and extends class-scoped material queries with name-only search and display class names.
 - Requires container orchestration configuration, a health endpoint, password-hashing support, and server environment configuration for secrets.

@@ -14,11 +14,15 @@ The system SHALL authorize knowledge-base material listing and access on the ser
 - **THEN** the server determines the permitted class from that user's validated session context
 
 ### Requirement: Class-scoped material-list interface
-The system SHALL expose `GET /api/materials` for authenticated users. It SHALL return HTTP 200 with at least `{ "materials": [ ... ] }`, where every item belongs to the current session user's class. The endpoint SHALL NOT use any client-supplied `class_id` or equivalent parameter to expand or change the query range; such a parameter MAY be present but the response SHALL still contain only the session user's class materials. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
+The system SHALL expose `GET /api/materials` for authenticated users. It SHALL return HTTP 200 with at least `{ "materials": [ ... ] }`, where every item belongs to the current session user's class. An optional `q` parameter SHALL filter only by a case-insensitive match against material `display_name` after the session-class boundary is applied. The endpoint SHALL NOT use any client-supplied `class_id` or equivalent parameter to expand or change the query range; such a parameter MAY be present but the response SHALL still contain only the session user's class materials. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
 
 #### Scenario: List remains scoped when a client supplies another class identifier
 - **WHEN** an authenticated class-A user calls `GET /api/materials?class_id=<class-B-id>`
 - **THEN** the response is HTTP 200 and contains only class-A material data
+
+#### Scenario: User searches names within the session class
+- **WHEN** an authenticated teacher or student calls `GET /api/materials?q=<name-fragment>`
+- **THEN** the response contains only same-class materials whose display names match the fragment, and contains no other-class material data
 
 ### Requirement: Class-scoped material-detail interface
 The system SHALL expose `GET /api/materials/<material_id>` for authenticated users. For a material owned by the current session user's class, it SHALL return HTTP 200 with at least `{ "material": { "id", "display_name", "class_id", "uploader_id", "status" } }`. If the material does not exist or belongs to another class, it SHALL return the same HTTP 404 response with at least `{ "error": "not_found" }`, without material data. An unauthenticated request SHALL return HTTP 401 with at least an `error` field.
@@ -44,3 +48,10 @@ The system SHALL associate each uploaded material record with the uploader's cla
 #### Scenario: Teacher uploads material from class A
 - **WHEN** a teacher authenticated for class A successfully uploads a material
 - **THEN** the resulting knowledge-base material record is associated with class A
+
+### Requirement: Human-readable class name is exposed with material context
+The system SHALL expose the class name associated with the authenticated user and each returned material, in addition to its stable internal `class_id`, so browser pages can display A or B rather than relying on the numeric identifier. The class name is server-derived display data and SHALL NOT grant the client authority to select a class.
+
+#### Scenario: Class-A material context is displayed
+- **WHEN** an authenticated class-A user loads their material context
+- **THEN** the returned user or material data identifies the class by its display name A as well as its internal identifier
