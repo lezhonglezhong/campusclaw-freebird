@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Mapping
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
 
 from campusclaw.auth import auth_bp
 from campusclaw.db import init_db
@@ -34,4 +34,10 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     register_seed_command(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(materials_bp)
+
+    @app.get("/health")
+    def health_check():
+        """Provide an unauthenticated, minimal liveness response."""
+        return jsonify(status="ok")
+
     return app

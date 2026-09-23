@@ -16,6 +16,7 @@ CampusClaw needs a secure, class-scoped foundation before teaching materials can
 - Add class-scoped material-name search and show a human-readable class name (such as A or B) without exposing client control over class ownership.
 - Seed representative A- and B-class teacher and student accounts, classes, and teaching-material records so login, role, class-boundary, and B-class workflows can be verified in a fresh local deployment.
 - Require password hashes rather than plaintext passwords, server-only environment variables for secrets, Docker Compose startup, and a `GET /health` health endpoint.
+- Use the verified public registry-proxy reference `docker.m.daocloud.io/library/python:3.13-slim` for the Compose build base image because this deployment's Docker daemon cannot reach Docker Hub directly; retain the upstream Python version/tag in that reference.
 - Use the project's local `Material` persistence and managed local content storage as the course project's knowledge-base implementation; external knowledge-base services, embeddings, and retrieval are not introduced.
 
 ## Capabilities
@@ -44,4 +45,4 @@ CampusClaw needs a secure, class-scoped foundation before teaching materials can
 - Adds authentication, authorization, class membership, material/knowledge-base persistence, and protected web/API routes.
 - Extends the upload API with safe text/Markdown file input, and extends class-scoped material queries with name-only search and display class names.
 - Adds class-scoped material download and teacher-only deletion contracts, including browser controls and seed content that is downloadable in a fresh deployment.
-- Requires container orchestration configuration, a health endpoint, password-hashing support, and server environment configuration for secrets.
+- Requires container orchestration configuration, an explicitly documented pullable Python base-image reference, a health endpoint, password-hashing support, and server environment configuration for secrets.

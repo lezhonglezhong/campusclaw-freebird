@@ -75,7 +75,9 @@ Hard-coding plaintext passwords directly in the database was rejected because it
 
 ### Containerized configuration and liveness
 
-Provide a Compose service for the Flask application with required non-secret configuration documented via environment-variable names. `SESSION_SECRET` is required at runtime and excluded from client bundles and source-controlled defaults; `.env.example` documents only a placeholder. `SESSION_SECRET=test-only-secret docker compose config` is the non-secret configuration validation command. Configure a Compose healthcheck that calls the unauthenticated, lightweight `GET /health` endpoint so Compose or external tooling can verify application liveness.
+Provide a Compose service for the Flask application with required non-secret configuration documented via environment-variable names. `SESSION_SECRET` is required at runtime and excluded from client bundles and source-controlled defaults; `.env.example` documents only a placeholder. `SESSION_SECRET=test-only-secret docker compose config` is the non-secret configuration validation command. Configure a Compose healthcheck that calls the unauthenticated, lightweight `GET /health` endpoint so Compose or external tooling can verify application liveness. Operational startup verification uses `docker compose up --build -d --wait` before requesting the endpoint, because detached Compose startup alone does not guarantee that the Flask process has begun listening.
+
+The Dockerfile SHALL use the verified pullable base image `docker.m.daocloud.io/library/python:3.13-slim`, retaining the upstream Python `3.13-slim` tag. This is a deployment-specific public registry proxy selected because the target Docker daemon times out against Docker Hub; it is not a replacement for an administrator-managed Docker registry mirror. The image reference is deliberately explicit in the Dockerfile so operators can inspect its source and substitute an approved organization-managed mirror when available. The proxy adds an availability and supply-chain dependency, so the exact image digest observed during verification is recorded in operational work but no credentials are embedded in source.
 
 Embedding secrets in Compose files was rejected because it risks disclosure. Making the health route authenticated was rejected because it prevents ordinary infrastructure checks.
 
@@ -87,6 +89,7 @@ Embedding secrets in Compose files was rejected because it risks disclosure. Mak
 - [Class identifiers supplied by clients are tampered with] → ignore them for authorization and derive class scope from the validated server context.
 - [Seed data leaks into a non-development deployment] → gate seed execution behind an explicit development/test configuration and document that it is not production startup behavior.
 - [Health endpoint reveals operational details] → return only minimal status information and no credentials, configuration, or material data.
+- [Public registry proxy becomes unavailable or diverges from the upstream image] → retain the explicit `3.13-slim` reference, verify the pull before Compose startup, and replace it with an administrator-managed mirror when one becomes available.
 
 ## Migration Plan
 
