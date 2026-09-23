@@ -96,7 +96,8 @@ def download_material(user: User, material_id: int):
     content_path = Path(material.content_path)
     if not content_path.is_file():
         return jsonify(error="not_found"), 404
-    download_name = secure_filename(material.display_name) or "material.txt"
+    suffix = content_path.suffix.lower() if content_path.suffix.lower() in {".txt", ".md"} else ".txt"
+    download_name = material.display_name if material.display_name.lower().endswith(suffix) else f"{material.display_name}{suffix}"
     return send_file(content_path, as_attachment=True, download_name=download_name)
 
 

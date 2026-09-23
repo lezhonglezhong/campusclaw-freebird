@@ -38,6 +38,16 @@ def test_teacher_and_student_download_own_class_seed_content(tmp_path: Path) -> 
         assert material.content_path not in response.headers["Content-Disposition"]
 
 
+def test_download_preserves_chinese_name_and_suffix(tmp_path: Path) -> None:
+    app = make_app(tmp_path)
+    teacher = app.test_client()
+    login(teacher, "teacher-a", "teacher-a-password")
+    created = teacher.post("/api/materials", json={"display_name": "中文材料", "content": "正文"})
+    response = teacher.get(f"/api/materials/{created.json['material']['id']}/download")
+    assert "filename*=UTF-8''" in response.headers["Content-Disposition"]
+    assert "%E4%B8%AD%E6%96%87%E6%9D%90%E6%96%99.txt" in response.headers["Content-Disposition"]
+
+
 def test_download_hides_cross_class_and_missing_content(tmp_path: Path) -> None:
     app = make_app(tmp_path)
     session = app.extensions["sqlalchemy"]["session"]
