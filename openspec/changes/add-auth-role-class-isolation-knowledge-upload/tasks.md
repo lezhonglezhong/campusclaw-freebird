@@ -34,5 +34,5 @@
 
 ## 7. Validation
 
-- [ ] 7.1 Add integration coverage for seeded login, protected-page redirect, teacher upload, HTTP-403 student upload denial, own-class listing, list-parameter isolation, and A-to-B detail HTTP-404 concealment; verify `pytest -q` exits successfully
+- [x] 7.1 Add integration coverage for seeded login, protected-page redirect, teacher upload, HTTP-403 student upload denial, own-class listing, list-parameter isolation, and A-to-B detail HTTP-404 concealment; verify `pytest -q` exits successfully
 - [ ] 7.2 Validate the completed OpenSpec change; verify `openspec validate add-auth-role-class-isolation-knowledge-upload --strict` exits successfully

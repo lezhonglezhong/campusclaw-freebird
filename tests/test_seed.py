@@ -9,7 +9,7 @@ from werkzeug.security import check_password_hash
 
 
 def test_seed_is_idempotent(tmp_path: Path) -> None:
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'seed.sqlite3'}"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'seed.sqlite3'}", "SESSION_SECRET": "test-secret"})
     seed_data(app)
     seed_data(app)
     session = app.extensions["sqlalchemy"]["session"]
@@ -21,7 +21,7 @@ def test_seed_is_idempotent(tmp_path: Path) -> None:
 
 
 def test_seeded_passwords_are_hashed(tmp_path: Path) -> None:
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'seed.sqlite3'}"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'seed.sqlite3'}", "SESSION_SECRET": "test-secret"})
     seed_data(app)
     session = app.extensions["sqlalchemy"]["session"]
 
