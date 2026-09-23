@@ -10,7 +10,7 @@ CampusClaw needs a secure, class-scoped foundation before teaching materials can
 - Add role-based authorization that allows only teachers to upload teaching materials and rejects student upload API requests.
 - Add server-side class isolation for teaching-material access so users cannot retrieve materials belonging to another class.
 - Add teacher material upload to the knowledge base and class-scoped material listing that includes successfully uploaded records.
-- Add browser-selectable `.txt` and `.md` material-file uploads while retaining the established JSON upload contract for compatibility.
+- Add browser-selectable `.txt` and `.md` material-file uploads with a teacher-provided material name while retaining the established JSON upload contract for compatibility.
 - Keep browser text-entry upload alongside file selection, and let authorized class members download material content.
 - Let a teacher delete material belonging to that teacher's session class together with its stored content.
 - Add class-scoped material-name search and show a human-readable class name (such as A or B) without exposing client control over class ownership.

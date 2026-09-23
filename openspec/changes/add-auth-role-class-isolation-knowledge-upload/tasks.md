@@ -32,6 +32,7 @@
 - [x] 5.6 Persist local seed content and implement server-enforced class-scoped material download without exposing storage paths; verify `pytest tests/test_material_download.py -q` exits successfully
 - [x] 5.7 Implement server-enforced teacher-only material deletion with managed-content cleanup and cross-class concealment; verify `pytest tests/test_material_delete.py -q` exits successfully
 - [x] 5.8 Restore browser text-entry upload alongside file upload, and add class-member download and teacher-only deletion controls; verify `pytest tests/test_browser_pages.py tests/test_browser_flow.py -q` exits successfully
+- [ ] 5.9 Add a required material-name field to browser file upload and accept its optional multipart `display_name` on the server while retaining filename fallback compatibility; verify `pytest tests/test_file_upload.py tests/test_browser_pages.py -q` exits successfully
 
 ## 6. Docker Compose and health checks
 
