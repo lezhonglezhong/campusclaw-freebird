@@ -3,7 +3,7 @@
 ## 1. Application skeleton
 
 - [x] 1.1 Scaffold the Flask application, SQLAlchemy persistence layer, SQLite configuration, server entry point, and pytest tooling; verify `pytest tests/test_app.py -q` exits successfully
-- [ ] 1.2 Define `Class`, `User`, and `Material` persistence models with role, class ownership, uploader, local content reference, and ingestion status fields; verify `pytest tests/test_models.py -q` creates and relates all three models
+- [x] 1.2 Define `Class`, `User`, and `Material` persistence models with role, class ownership, uploader, local content reference, and ingestion status fields; verify `pytest tests/test_models.py -q` creates and relates all three models
 
 ## 2. Development seed data
 

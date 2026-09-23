@@ -18,6 +18,12 @@ def init_db(app: Flask) -> None:
         "session": session,
     }
 
+    # Importing here registers the persistence models before their tables are
+    # created, while keeping the model module free of Flask application setup.
+    from campusclaw import models  # noqa: F401
+
+    Base.metadata.create_all(engine)
+
     @app.teardown_appcontext
     def remove_session(_exception: BaseException | None = None) -> None:
         session.remove()
