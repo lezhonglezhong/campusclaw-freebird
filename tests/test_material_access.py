@@ -26,3 +26,18 @@ def test_class_a_user_lists_and_reads_class_a_material(tmp_path: Path) -> None:
     response = client.get(f"/api/materials/{material.id}")
     assert response.status_code == 200
     assert response.json["material"]["id"] == material.id
+
+
+def test_class_id_parameter_cannot_expand_list_scope(tmp_path: Path) -> None:
+    _app, client = logged_in_client(tmp_path)
+    response = client.get("/api/materials?class_id=2")
+    assert response.status_code == 200
+    assert {item["class_id"] for item in response.json["materials"]} == {1}
+
+
+def test_cross_class_detail_returns_404_without_material_data(tmp_path: Path) -> None:
+    app, client = logged_in_client(tmp_path)
+    material = app.extensions["sqlalchemy"]["session"].query(Material).filter_by(class_id=2).one()
+    response = client.get(f"/api/materials/{material.id}")
+    assert response.status_code == 404
+    assert response.json == {"error": "not_found"}
