@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request, send_file
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
@@ -14,6 +15,31 @@ from campusclaw.retrieval import index_material, remove_material_from_index
 
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/api/materials")
+
+
+@materials_bp.get("/retrieve")
+@require_authenticated_api
+def retrieve_materials(user: User):
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify(error="invalid_query"), 400
+    session = current_app.extensions["sqlalchemy"]["session"]
+    try:
+        rows = session.execute(text("""
+            SELECT m.id, m.display_name, m.class_id, c.name, m.uploader_id,
+                   snippet(material_retrieval, 2, '', '', '…', 24)
+            FROM material_retrieval JOIN materials m ON m.id = material_retrieval.material_id
+            JOIN classes c ON c.id = m.class_id
+            WHERE material_retrieval MATCH :query AND material_retrieval.class_id = :class_id
+            ORDER BY bm25(material_retrieval)
+        """), {"query": query, "class_id": user.class_id}).all()
+    except Exception:
+        return jsonify(error="invalid_query"), 400
+    return jsonify(results=[{
+        "material_id": row[0], "display_name": row[1], "class_id": row[2],
+        "class_name": row[3], "uploader_id": row[4], "excerpt": row[5],
+        "download_url": f"/api/materials/{row[0]}/download",
+    } for row in rows])
 
 
 def material_payload(material: Material) -> dict[str, int | str]:
