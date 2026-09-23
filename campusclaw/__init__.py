@@ -18,6 +18,7 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     database_path = Path(app.instance_path) / "campusclaw.sqlite3"
     app.config.from_mapping(
         DATABASE_URL=f"sqlite:///{database_path}",
+        MATERIAL_STORAGE_DIR=str(Path(app.instance_path) / "materials"),
         SESSION_SECRET=os.environ.get("SESSION_SECRET"),
         TESTING=False,
     )
