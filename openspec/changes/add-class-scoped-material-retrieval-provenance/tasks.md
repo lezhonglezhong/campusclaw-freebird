@@ -11,4 +11,4 @@
 - [x] 3.1 Add a Simplified Chinese retrieval form and provenance-result rendering to the protected material workspace; verify `pytest tests/test_browser_retrieval.py -q` succeeds
 
 ## 4. Validation
-- [ ] 4.1 Run full regression and strict change validation; verify `pytest -q && openspec validate add-class-scoped-material-retrieval-provenance --strict` succeeds
+- [x] 4.1 Run full regression and strict change validation; verify `pytest -q && openspec validate add-class-scoped-material-retrieval-provenance --strict` succeeds
