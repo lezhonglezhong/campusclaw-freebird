@@ -26,6 +26,15 @@
         </form>
         <ul id="material-list" class="material-list"></ul>
       </section>
+      <section aria-labelledby="content-retrieval-title">
+        <h2 id="content-retrieval-title">正文检索</h2>
+        <form id="content-retrieval-form" role="search">
+          <label for="content-retrieval-query">搜索材料正文</label>
+          <input id="content-retrieval-query" name="q" type="search" required>
+          <button type="submit">检索</button>
+        </form>
+        <ul id="content-retrieval-results" class="material-list"></ul>
+      </section>
       <section id="material-detail" class="detail" hidden aria-labelledby="material-detail-title">
         <h2 id="material-detail-title">材料详情</h2>
         <dl id="material-detail-fields"></dl>

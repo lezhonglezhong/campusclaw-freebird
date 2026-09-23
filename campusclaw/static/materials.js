@@ -6,6 +6,8 @@ const detailFields = document.querySelector("#material-detail-fields");
 const detailActions = document.querySelector("#material-actions");
 const teacherUpload = document.querySelector("#teacher-upload");
 const searchForm = document.querySelector("#material-search-form");
+const retrievalForm = document.querySelector("#content-retrieval-form");
+const retrievalResults = document.querySelector("#content-retrieval-results");
 let currentUser;
 
 function roleLabel(role) {
@@ -226,6 +228,26 @@ document.querySelector("#logout-button").addEventListener("click", async () => {
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   await loadMaterials(searchForm.elements.q.value.trim());
+});
+
+retrievalForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const query = retrievalForm.elements.q.value.trim();
+  if (!query) return;
+  const response = await request(`/api/materials/retrieve?${new URLSearchParams({ q: query })}`);
+  const { results } = await response.json();
+  retrievalResults.replaceChildren();
+  for (const result of results) {
+    const item = document.createElement("li");
+    const source = document.createElement("a");
+    source.href = result.download_url;
+    source.textContent = `来源：${result.display_name}（${result.class_name}班，上传者 ${result.uploader_id}）`;
+    const excerpt = document.createElement("p");
+    excerpt.textContent = result.excerpt;
+    item.append(source, excerpt);
+    retrievalResults.append(item);
+  }
+  status.textContent = results.length ? "已显示正文检索结果。" : "未找到正文匹配的材料。";
 });
 
 initializeWorkspace();
