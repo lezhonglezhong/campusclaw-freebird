@@ -63,6 +63,38 @@ def download_material(user: User, material_id: int):
     return send_file(content_path, as_attachment=True, download_name=download_name)
 
 
+@materials_bp.delete("/<int:material_id>")
+@require_teacher
+def delete_material(user: User, material_id: int):
+    """Delete an own-class material and its content without crossing class boundaries."""
+    db_session = current_app.extensions["sqlalchemy"]["session"]
+    material = db_session.query(Material).filter_by(id=material_id, class_id=user.class_id).one_or_none()
+    if material is None:
+        return jsonify(error="not_found"), 404
+
+    content_path = Path(material.content_path)
+    staged_path: Path | None = None
+    try:
+        if content_path.is_file():
+            staged_path = content_path.with_name(f".{content_path.name}.{uuid4().hex}.deleting")
+            os.replace(content_path, staged_path)
+        db_session.delete(material)
+        db_session.commit()
+        if staged_path is not None:
+            staged_path.unlink()
+    except OSError:
+        db_session.rollback()
+        if staged_path is not None and staged_path.exists():
+            os.replace(staged_path, content_path)
+        return jsonify(error="storage_failed"), 500
+    except Exception:
+        db_session.rollback()
+        if staged_path is not None and staged_path.exists():
+            os.replace(staged_path, content_path)
+        return jsonify(error="deletion_failed"), 500
+    return "", 204
+
+
 @materials_bp.post("")
 @require_teacher
 def upload_material(user: User):

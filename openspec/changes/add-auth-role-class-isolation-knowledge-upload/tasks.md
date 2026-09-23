@@ -30,7 +30,7 @@
 - [x] 5.4 Extend idempotent seed data with documented `teacher-b` and `student-b` accounts and expose server-derived A/B class names in authenticated and material responses; verify `pytest tests/test_seed.py tests/test_auth.py tests/test_material_access.py -q` exits successfully
 - [x] 5.5 Add teacher and student material-name search through the protected browser/API flow without weakening the session class boundary; verify `pytest tests/test_material_search.py tests/test_browser_pages.py tests/test_browser_flow.py -q` exits successfully
 - [x] 5.6 Persist local seed content and implement server-enforced class-scoped material download without exposing storage paths; verify `pytest tests/test_material_download.py -q` exits successfully
-- [ ] 5.7 Implement server-enforced teacher-only material deletion with managed-content cleanup and cross-class concealment; verify `pytest tests/test_material_delete.py -q` exits successfully
+- [x] 5.7 Implement server-enforced teacher-only material deletion with managed-content cleanup and cross-class concealment; verify `pytest tests/test_material_delete.py -q` exits successfully
 - [ ] 5.8 Restore browser text-entry upload alongside file upload, and add class-member download and teacher-only deletion controls; verify `pytest tests/test_browser_pages.py tests/test_browser_flow.py -q` exits successfully
 
 ## 6. Docker Compose and health checks
