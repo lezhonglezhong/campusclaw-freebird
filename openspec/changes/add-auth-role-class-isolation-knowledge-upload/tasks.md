@@ -12,7 +12,7 @@
 
 ## 3. Login and session security
 
-- [ ] 3.1 Implement `POST /login` using an adaptive password hash and `SESSION_SECRET`; verify `pytest tests/test_auth.py::test_login_contract_and_password_hashing -q` covers HTTP-200 login response, session creation, and non-plaintext persistence
+- [x] 3.1 Implement `POST /login` using an adaptive password hash and `SESSION_SECRET`; verify `pytest tests/test_auth.py::test_login_contract_and_password_hashing -q` covers HTTP-200 login response, session creation, and non-plaintext persistence
 - [ ] 3.2 Implement the server-validated session context and the protected `GET /materials` redirect contract; verify `pytest tests/test_auth.py::test_unauthenticated_materials_redirects_and_invalid_login_has_no_session -q` exits successfully
 - [ ] 3.3 Enforce startup failure without `SESSION_SECRET` and keep secrets out of responses and source-controlled defaults; verify `pytest tests/test_config.py::test_missing_session_secret_fails_startup tests/test_auth.py::test_responses_do_not_expose_session_secret -q` exits successfully
 

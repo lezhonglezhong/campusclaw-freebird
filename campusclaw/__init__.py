@@ -2,9 +2,11 @@
 
 from pathlib import Path
 from typing import Mapping
+import os
 
 from flask import Flask
 
+from campusclaw.auth import auth_bp
 from campusclaw.db import init_db
 from campusclaw.seed import register_seed_command
 
@@ -15,13 +17,16 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     database_path = Path(app.instance_path) / "campusclaw.sqlite3"
     app.config.from_mapping(
         DATABASE_URL=f"sqlite:///{database_path}",
+        SESSION_SECRET=os.environ.get("SESSION_SECRET"),
         TESTING=False,
     )
 
     if test_config is not None:
         app.config.update(test_config)
 
+    app.secret_key = app.config["SESSION_SECRET"]
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
     register_seed_command(app)
+    app.register_blueprint(auth_bp)
     return app
