@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
@@ -46,6 +46,21 @@ def material_detail(user: User, material_id: int):
     if material is None:
         return jsonify(error="not_found"), 404
     return jsonify(material=material_payload(material))
+
+
+@materials_bp.get("/<int:material_id>/download")
+@require_authenticated_api
+def download_material(user: User, material_id: int):
+    """Send an own-class material as an attachment without exposing its path."""
+    db_session = current_app.extensions["sqlalchemy"]["session"]
+    material = db_session.query(Material).filter_by(id=material_id, class_id=user.class_id).one_or_none()
+    if material is None:
+        return jsonify(error="not_found"), 404
+    content_path = Path(material.content_path)
+    if not content_path.is_file():
+        return jsonify(error="not_found"), 404
+    download_name = secure_filename(material.display_name) or "material.txt"
+    return send_file(content_path, as_attachment=True, download_name=download_name)
 
 
 @materials_bp.post("")
