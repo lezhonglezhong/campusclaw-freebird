@@ -27,3 +27,16 @@ def test_login_contract_and_password_hashing(tmp_path: Path) -> None:
         assert session["user_id"] == 1
     user = app.extensions["sqlalchemy"]["session"].query(User).filter_by(account="teacher-a").one()
     assert user.password_hash != SEED_ACCOUNTS["teacher-a"]["password"]
+
+
+def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tmp_path: Path) -> None:
+    _app, client = make_client(tmp_path)
+
+    response = client.get("/materials", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/login")
+
+    response = client.post("/login", json={"account": "teacher-a", "password": "wrong"})
+    assert response.status_code == 401
+    with client.session_transaction() as session:
+        assert "user_id" not in session

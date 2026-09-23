@@ -1,6 +1,6 @@
 """Authentication endpoints and helpers."""
 
-from flask import Blueprint, current_app, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import check_password_hash
 
 from campusclaw.models import User
@@ -12,6 +12,14 @@ auth_bp = Blueprint("auth", __name__)
 def user_payload(user: User) -> dict[str, int | str]:
     """Return the public identity fields specified by the login contract."""
     return {"id": user.id, "account": user.account, "role": user.role, "class_id": user.class_id}
+
+
+def session_user() -> User | None:
+    """Resolve the current user from the signed session and persistence layer."""
+    user_id = session.get("user_id")
+    if not isinstance(user_id, int):
+        return None
+    return current_app.extensions["sqlalchemy"]["session"].get(User, user_id)
 
 
 @auth_bp.post("/login")
@@ -33,3 +41,11 @@ def login():
     session.clear()
     session["user_id"] = user.id
     return jsonify(user=user_payload(user))
+
+
+@auth_bp.get("/materials")
+def materials_page():
+    """Minimal protected browser page used by the login redirect contract."""
+    if session_user() is None:
+        return redirect("/login")
+    return "Materials"
