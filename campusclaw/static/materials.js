@@ -8,9 +8,18 @@ const teacherUpload = document.querySelector("#teacher-upload");
 const searchForm = document.querySelector("#material-search-form");
 const retrievalForm = document.querySelector("#content-retrieval-form");
 const retrievalResults = document.querySelector("#content-retrieval-results");
+const retrievalStatus = document.querySelector("#retrieval-status");
+const askForm = document.querySelector("#ask-form");
+const askStatus = document.querySelector("#ask-status");
+const askAnswer = document.querySelector("#ask-answer");
+const askCitations = document.querySelector("#ask-citations");
+const teacherIndexing = document.querySelector("#teacher-indexing");
+const indexingTemplate = document.querySelector("#teacher-indexing-template");
 const auth = window.CampusClawAuth;
 const request = auth.request;
 let currentUser;
+let retrievalRequestId = 0;
+let askRequestId = 0;
 
 function roleLabel(role) {
   return { teacher: "教师", student: "学生" }[role] || role;
@@ -21,14 +30,23 @@ function materialStatusLabel(value) {
 }
 
 function clearProtectedView() {
+  retrievalRequestId += 1;
+  askRequestId += 1;
   currentUser = undefined;
   userContext.textContent = "";
   list.replaceChildren();
   detailFields.replaceChildren();
   detailActions.replaceChildren();
   retrievalResults.replaceChildren();
+  retrievalStatus.textContent = "";
+  askStatus.textContent = "";
+  askAnswer.textContent = "";
+  askAnswer.hidden = true;
+  askCitations.replaceChildren();
   teacherUpload.replaceChildren();
   teacherUpload.hidden = true;
+  teacherIndexing.replaceChildren();
+  teacherIndexing.hidden = true;
   detail.hidden = true;
 }
 
@@ -157,7 +175,73 @@ async function loadMaterials(query = "") {
     item.append(button);
     list.append(item);
   }
+  const reindexMaterial = teacherIndexing.querySelector("#reindex-material");
+  if (reindexMaterial) {
+    reindexMaterial.replaceChildren();
+    for (const material of materials) {
+      const option = document.createElement("option");
+      option.value = String(material.id);
+      option.textContent = material.display_name;
+      reindexMaterial.append(option);
+    }
+  }
   if (!materials.length) status.textContent = query ? "未找到名称匹配的材料。" : "当前班级暂无材料。";
+}
+
+function renderTeacherIndexing(user) {
+  if (user.role !== "teacher") return;
+  teacherIndexing.replaceChildren(indexingTemplate.content.cloneNode(true));
+  teacherIndexing.hidden = false;
+  const form = teacherIndexing.querySelector("#reindex-form");
+  const strategy = form.elements.strategy;
+  const custom = teacherIndexing.querySelector("#custom-chunk-options");
+  const reindexStatus = teacherIndexing.querySelector("#reindex-status");
+  strategy.addEventListener("change", () => {
+    custom.hidden = strategy.value !== "custom";
+  });
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const materialId = Number(form.elements.material_id.value);
+    if (!Number.isInteger(materialId) || materialId < 1) {
+      reindexStatus.textContent = "请先选择材料。";
+      return;
+    }
+    const options = strategy.value === "custom" ? {
+      max_length: Number(form.elements.max_length.value),
+      overlap_percent: Number(form.elements.overlap_percent.value),
+      separator: form.elements.separator.value,
+      remove_urls: form.elements.remove_urls.checked,
+      remove_emails: form.elements.remove_emails.checked,
+      collapse_whitespace: form.elements.collapse_whitespace.checked,
+    } : {};
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    reindexStatus.textContent = "正在重建索引…";
+    try {
+      const response = await request(`/api/materials/${materialId}/reindex`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategy: strategy.value, options }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        reindexStatus.textContent = result.vector_status === "ready"
+          ? `已重建 ${result.chunk_count} 个切片。`
+          : `已生成 ${result.chunk_count} 个文本切片；语义索引暂不可用。`;
+      } else if (response.status === 400) {
+        reindexStatus.textContent = "切片参数无效，请检查后重试。";
+      } else if (response.status === 403) {
+        reindexStatus.textContent = "你没有重建索引的权限。";
+      } else if (response.status === 404) {
+        reindexStatus.textContent = "材料已不存在或无权访问。";
+      } else {
+        reindexStatus.textContent = "重建索引失败，请稍后重试。";
+      }
+    } catch (error) {
+      if (error.message !== "unauthorized") reindexStatus.textContent = "重建索引失败，请稍后重试。";
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 function renderTeacherUpload(user) {
@@ -260,6 +344,7 @@ async function initializeWorkspace() {
     currentUser = user;
     userContext.textContent = `${user.account} · ${roleLabel(user.role)} · ${user.class_name} 班`;
     renderTeacherUpload(user);
+    renderTeacherIndexing(user);
     await loadMaterials();
   } catch (error) {
     if (error.message !== "unauthorized") status.textContent = "无法加载材料页面，请稍后重试。";
@@ -285,27 +370,99 @@ retrievalForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const query = retrievalForm.elements.q.value.trim();
   if (!query) return;
-  const response = await request(`/api/materials/retrieve?${new URLSearchParams({ q: query })}`);
-  const { results } = await response.json();
+  const mode = retrievalForm.elements.mode.value;
+  const requestId = ++retrievalRequestId;
   retrievalResults.replaceChildren();
-  for (const result of results) {
-    const item = document.createElement("li");
-    const source = document.createElement("button");
-    source.type = "button";
-    source.textContent = `来源：${result.display_name}（${result.class_name}班，上传者 ${result.uploader_id}）`;
-    source.addEventListener("click", async () => {
-      try {
-        await downloadMaterial(result.download_url, result.display_name);
-      } catch (error) {
-        if (error.message !== "unauthorized") status.textContent = "下载来源材料失败，请稍后重试。";
-      }
-    });
-    const excerpt = document.createElement("p");
-    excerpt.textContent = result.excerpt;
-    item.append(source, excerpt);
-    retrievalResults.append(item);
+  retrievalStatus.textContent = "正在检索…";
+  const button = retrievalForm.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const response = await request(`/api/retrieval?${new URLSearchParams({ q: query, mode })}`);
+    if (requestId !== retrievalRequestId) return;
+    if (response.status === 400) {
+      retrievalStatus.textContent = "请输入有效的检索内容和方式。";
+      return;
+    }
+    if (response.status === 503) {
+      retrievalStatus.textContent = "语义检索服务暂不可用；可切换关键词检索。";
+      return;
+    }
+    if (!response.ok) throw new Error("retrieval_failed");
+    const { hits } = await response.json();
+    for (const hit of hits) {
+      const item = document.createElement("li");
+      item.className = "result-card";
+      const source = document.createElement("button");
+      source.type = "button";
+      source.textContent = `来源：${hit.material_title} · 切片 ${hit.chunk_index + 1}`;
+      source.addEventListener("click", () => loadDetail(hit.material_id));
+      const meta = document.createElement("p");
+      meta.className = "source-meta";
+      meta.textContent = `字符位置 ${hit.start_offset}–${hit.end_offset}`;
+      const excerpt = document.createElement("p");
+      excerpt.textContent = hit.excerpt;
+      item.append(source, meta, excerpt);
+      retrievalResults.append(item);
+    }
+    retrievalStatus.textContent = hits.length ? `找到 ${hits.length} 个相关切片。` : "资料中未找到相关内容。";
+  } catch (error) {
+    if (error.message !== "unauthorized" && requestId === retrievalRequestId) {
+      retrievalStatus.textContent = "检索失败，请稍后重试。";
+    }
+  } finally {
+    button.disabled = false;
   }
-  status.textContent = results.length ? "已显示正文检索结果。" : "未找到正文匹配的材料。";
+});
+
+askForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const question = askForm.elements.question.value.trim();
+  if (!question) return;
+  const requestId = ++askRequestId;
+  askAnswer.textContent = "";
+  askAnswer.hidden = true;
+  askCitations.replaceChildren();
+  askStatus.textContent = "正在查找相关资料并生成答案…";
+  const button = askForm.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const response = await request("/api/ask", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (requestId !== askRequestId) return;
+    if (response.status === 400) {
+      askStatus.textContent = "请输入有效的问题。";
+      return;
+    }
+    if (response.status === 503) {
+      askStatus.textContent = "问答服务暂不可用，请稍后重试。";
+      return;
+    }
+    if (!response.ok) throw new Error("ask_failed");
+    const { answer, citations } = await response.json();
+    askAnswer.textContent = answer;
+    askAnswer.hidden = false;
+    for (const citation of citations) {
+      const item = document.createElement("li");
+      item.className = "citation-card";
+      const source = document.createElement("button");
+      source.type = "button";
+      source.textContent = `[${citation.number}] ${citation.material_title} · 切片 ${citation.chunk_index + 1}`;
+      source.addEventListener("click", () => loadDetail(citation.material_id));
+      const excerpt = document.createElement("p");
+      excerpt.textContent = citation.excerpt;
+      item.append(source, excerpt);
+      askCitations.append(item);
+    }
+    askStatus.textContent = citations.length ? "答案与来源已显示。" : "资料中未找到相关内容。";
+  } catch (error) {
+    if (error.message !== "unauthorized" && requestId === askRequestId) {
+      askStatus.textContent = "问答失败，请稍后重试。";
+    }
+  } finally {
+    button.disabled = false;
+  }
 });
 
 initializeWorkspace();

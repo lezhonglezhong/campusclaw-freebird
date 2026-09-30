@@ -33,7 +33,7 @@
 ## 5. Browser Workspace
 
 - [x] 5.1 Restructure the protected workspace and styles into clear material, retrieval, grounded-answer, and teacher indexing panels with responsive result/citation cards, mode and strategy controls, accessible labels/status regions, and no client-side secret/vector fields; verify with `python -m pytest -q tests/test_browser_pages.py tests/test_browser_knowledge_ui.py`.
-- [ ] 5.2 Implement browser behavior using the shared `sessionStorage` Bearer client for mode-aware retrieval, stale-result clearing, provenance links, empty/400/401/503 states, answer/citation alignment, and teacher-only strategy/reindex controls while preserving token-authenticated upload/download/delete flows; verify with `python -m pytest -q tests/test_browser_flow.py tests/test_browser_token_auth.py tests/test_browser_retrieval.py tests/test_browser_ask.py tests/test_browser_reindex.py`.
+- [x] 5.2 Implement browser behavior using the shared `sessionStorage` Bearer client for mode-aware retrieval, stale-result clearing, provenance links, empty/400/401/503 states, answer/citation alignment, and teacher-only strategy/reindex controls while preserving token-authenticated upload/download/delete flows; verify with `python -m pytest -q tests/test_browser_flow.py tests/test_browser_token_auth.py tests/test_browser_retrieval.py tests/test_browser_ask.py tests/test_browser_reindex.py`.
 
 ## 6. Reproducible Runtime and Documentation
 

@@ -6,5 +6,7 @@ def test_workspace_exposes_chinese_retrieval_controls(tmp_path):
     assert 'content-retrieval-form' in page
     script=(app.static_folder + '/materials.js')
     source=open(script, encoding='utf-8').read()
-    assert '/api/materials/retrieve?' in source
+    assert '/api/retrieval?' in source
     assert 'const request = auth.request;' in source
+    assert 'new URLSearchParams({ q: query, mode })' in source
+    assert 'retrievalResults.replaceChildren();' in source
