@@ -3,7 +3,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from campusclaw.auth import require_authenticated_api
-from campusclaw.knowledge_retrieval import keyword_retrieve, public_hit, vector_retrieve
+from campusclaw.knowledge_retrieval import hybrid_retrieve, keyword_retrieve, public_hit, vector_retrieve
 from campusclaw.ai_providers import ProviderUnavailable
 from campusclaw.models import User
 
@@ -31,6 +31,13 @@ def retrieve_chunks(user: User):
         except ProviderUnavailable:
             return jsonify(error="vector_unavailable"), 503
     else:
-        return jsonify(error="vector_unavailable"), 503
+        try:
+            hits = hybrid_retrieve(
+                session, query, user.class_id,
+                current_app.extensions["embedding_provider"],
+                current_app.extensions["vector_store"],
+            )
+        except ProviderUnavailable:
+            return jsonify(error="vector_unavailable"), 503
     return jsonify(mode=mode, hits=[public_hit(session, hit) for hit in hits])
 

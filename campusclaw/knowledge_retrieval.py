@@ -95,6 +95,39 @@ def vector_retrieve(
             for index, (chunk, score) in enumerate(ranked[:limit], start=1)]
 
 
+def hybrid_retrieve(
+    session: Session, query: str, class_id: int, embedding: EmbeddingProvider,
+    store: VectorStore, limit: int = 20,
+) -> list[RankedChunk]:
+    """Fuse already filtered keyword and vector ranks with RRF k=60."""
+    keyword = keyword_retrieve(session, query, class_id, limit)
+    vector = vector_retrieve(session, query, class_id, embedding, store, limit)
+    by_id: dict[int, RankedChunk] = {}
+    for source in (keyword, vector):
+        for hit in source:
+            combined = by_id.get(hit.chunk.id)
+            if combined is None:
+                combined = RankedChunk(chunk=hit.chunk, rrf_score=0.0)
+                by_id[hit.chunk.id] = combined
+            if hit.keyword_rank is not None:
+                combined.keyword_rank = hit.keyword_rank
+                combined.keyword_score = hit.keyword_score
+                combined.rrf_score += 1.0 / (60 + hit.keyword_rank)
+            if hit.vector_rank is not None:
+                combined.vector_rank = hit.vector_rank
+                combined.vector_score = hit.vector_score
+                combined.rrf_score += 1.0 / (60 + hit.vector_rank)
+    ranked = sorted(
+        by_id.values(),
+        key=lambda hit: (
+            -hit.rrf_score,
+            min(rank for rank in (hit.keyword_rank, hit.vector_rank) if rank is not None),
+            hit.chunk.id,
+        ),
+    )
+    return ranked[:limit]
+
+
 def public_hit(session: Session, hit: RankedChunk) -> dict:
     """Format only authorized relational provenance for an API response."""
     material = session.query(Material).filter_by(id=hit.chunk.material_id, class_id=hit.chunk.class_id).one()
