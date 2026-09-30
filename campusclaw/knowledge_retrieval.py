@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
+from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from campusclaw.models import KnowledgeChunk, Material
+from campusclaw.ai_providers import EmbeddingProvider, ProviderUnavailable
+from campusclaw.vector_store import VectorStore
 
 
 @dataclass
@@ -55,6 +59,40 @@ def keyword_retrieve(session: Session, query: str, class_id: int, limit: int = 2
     scored.sort(key=lambda item: (-item[1], item[0].id))
     return [RankedChunk(chunk=chunk, keyword_score=score, keyword_rank=index)
             for index, (chunk, score) in enumerate(scored[:limit], start=1)]
+
+
+def vector_retrieve(
+    session: Session, query: str, class_id: int, embedding: EmbeddingProvider,
+    store: VectorStore, limit: int = 20,
+) -> list[RankedChunk]:
+    """Filter cosine candidates, then hydrate text using a fresh class check."""
+    try:
+        vector = embedding.embed([query])[0]
+        points = store.search(vector, class_id, limit)
+    except (IndexError, TypeError, ValueError) as exc:
+        raise ProviderUnavailable("vector_unavailable") from exc
+    ranked: list[tuple[KnowledgeChunk, float]] = []
+    seen: set[int] = set()
+    for point in points:
+        if not isinstance(point, dict):
+            continue
+        point_id, score = point.get("id"), point.get("score")
+        if (
+            isinstance(point_id, bool) or not isinstance(point_id, int)
+            or isinstance(score, bool) or not isinstance(score, (int, float))
+            or not math.isfinite(score) or score < 0.35 or point_id in seen
+        ):
+            continue
+        seen.add(point_id)
+        chunk = session.query(KnowledgeChunk).filter_by(
+            id=point_id, class_id=class_id, vector_status="ready",
+            text_status="ready",
+        ).one_or_none()
+        if chunk is not None:
+            ranked.append((chunk, float(score)))
+    ranked.sort(key=lambda item: (-item[1], item[0].id))
+    return [RankedChunk(chunk=chunk, vector_score=score, vector_rank=index)
+            for index, (chunk, score) in enumerate(ranked[:limit], start=1)]
 
 
 def public_hit(session: Session, hit: RankedChunk) -> dict:

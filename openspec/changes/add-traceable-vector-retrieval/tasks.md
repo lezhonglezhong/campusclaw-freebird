@@ -20,7 +20,7 @@
 ## 3. Traceable Retrieval API
 
 - [x] 3.1 Implement keyword chunk retrieval and `GET /api/retrieval` request/authentication validation, requiring an `Authorization: Bearer` header and using the token-resolved user's current database class, relational text-ready filtering, Chinese matching, and normalized provenance hits without any embedding/vector call; verify with `python -m pytest -q tests/test_keyword_retrieval.py tests/test_retrieval_api.py tests/test_token_auth.py`.
-- [ ] 3.2 Implement vector retrieval with query embedding, Qdrant filtering by the token-resolved database class, the 0.35 cosine cutoff, relational class/status recheck, ordered scores/ranks, and safe 503 mapping; verify with `python -m pytest -q tests/test_vector_retrieval.py tests/test_retrieval_security.py`.
+- [x] 3.2 Implement vector retrieval with query embedding, Qdrant filtering by the token-resolved database class, the 0.35 cosine cutoff, relational class/status recheck, ordered scores/ranks, and safe 503 mapping; verify with `python -m pytest -q tests/test_vector_retrieval.py tests/test_retrieval_security.py`.
 - [ ] 3.3 Implement hybrid retrieval with pre-fusion filtering, RRF `k = 60`, deterministic tie-breaking, default-mode behavior, bounded provenance excerpts, and no weak-result padding; verify with `python -m pytest -q tests/test_hybrid_retrieval.py tests/test_retrieval_api.py`.
 - [ ] 3.4 Preserve the legacy `/api/materials/retrieve` behavior while proving all new retrieval modes ignore request-supplied class identifiers and do not leak raw vectors, filesystem paths, foreign metadata, upstream bodies, or secrets; verify with `python -m pytest -q tests/test_material_retrieval.py tests/test_material_retrieval_security.py tests/test_retrieval_security.py`.
 
