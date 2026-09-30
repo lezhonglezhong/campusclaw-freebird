@@ -23,6 +23,7 @@ def init_db(app: Flask) -> None:
     from campusclaw import models  # noqa: F401
 
     Base.metadata.create_all(engine)
+    initialize_knowledge_index(session, engine.dialect.name)
     from campusclaw.retrieval import initialize_retrieval_index
     initialize_retrieval_index(session)
     session.commit()
@@ -30,3 +31,12 @@ def init_db(app: Flask) -> None:
     @app.teardown_appcontext
     def remove_session(_exception: BaseException | None = None) -> None:
         session.remove()
+
+
+def initialize_knowledge_index(session, dialect: str) -> None:
+    """Create the local FTS companion only where the dialect supports it."""
+    if dialect == "sqlite":
+        session.execute(__import__("sqlalchemy").text(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunk_retrieval "
+            "USING fts5(chunk_id UNINDEXED, class_id UNINDEXED, chunk_text)"
+        ))
