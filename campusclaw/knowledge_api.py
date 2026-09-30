@@ -13,6 +13,24 @@ from campusclaw.models import User
 
 knowledge_bp = Blueprint("knowledge", __name__, url_prefix="/api")
 
+ANSWER_CANDIDATE_LIMIT = 12
+ANSWER_EVIDENCE_LIMIT = 4
+COMPARISON_EVIDENCE_LIMIT = 8
+
+_COMPARISON_PATTERN = re.compile(
+    r"哪个|哪一|最多|最少|最大|最小|最高|最低|比较|相比|分别|"
+    r"(?:most|least|highest|lowest|compare|versus|\bvs\b)",
+    re.IGNORECASE,
+)
+_QUESTION_STOP_BIGRAMS = {
+    "什么", "哪个", "哪一", "多少", "最多", "最少", "最大", "最小",
+    "最高", "最低", "请问", "是否", "为什", "怎么", "如何", "材料", "资料",
+}
+_QUESTION_STOP_CHARS = set("哪个一什么的了是有吗呢啊请问最更多少大小高低")
+_QUESTION_STOP_WORDS = {
+    "a", "an", "and", "are", "is", "of", "or", "the", "to", "what", "which", "who",
+}
+
 
 def parse_ask_payload(payload: object) -> tuple[str, list[dict[str, str]]]:
     """Accept only the current question and bounded user/assistant history."""
@@ -35,6 +53,54 @@ def parse_ask_payload(payload: object) -> tuple[str, list[dict[str, str]]]:
             raise ValueError("invalid_history")
         history.append({"role": role, "content": content.strip()[:1000]})
     return question.strip(), history[-6:]
+
+
+def _question_terms(question: str) -> set[str]:
+    """Return small normalized lexical signals for local evidence selection."""
+    normalized = unicodedata.normalize("NFKC", question).casefold()
+    terms = {
+        word for word in re.findall(r"[a-z0-9]+", normalized)
+        if len(word) >= 2 and word not in _QUESTION_STOP_WORDS
+    }
+    for sequence in re.findall(r"[\u3400-\u9fff]+", normalized):
+        terms.update(
+            sequence[index:index + 2]
+            for index in range(len(sequence) - 1)
+            if sequence[index:index + 2] not in _QUESTION_STOP_BIGRAMS
+        )
+        terms.update(character for character in sequence if character not in _QUESTION_STOP_CHARS)
+    return terms
+
+
+def select_answer_evidence(session, question: str, hits: list) -> list:
+    """Select a bounded, duplicate-free prompt subset without changing retrieval."""
+    distinct = []
+    seen: set[int] = set()
+    for hit in hits:
+        chunk_id = hit.chunk.id
+        if chunk_id in seen:
+            continue
+        seen.add(chunk_id)
+        distinct.append(hit)
+
+    terms = _question_terms(question)
+    matched = []
+    for hit in distinct:
+        title = public_hit(session, hit)["material_title"]
+        haystack = unicodedata.normalize(
+            "NFKC", f"{title}\n{hit.chunk.chunk_text}"
+        ).casefold()
+        if any(term in haystack for term in terms):
+            matched.append(hit)
+
+    if not matched:
+        return distinct[:ANSWER_EVIDENCE_LIMIT]
+    if _COMPARISON_PATTERN.search(question):
+        numeric = [hit for hit in matched if re.search(r"\d", hit.chunk.chunk_text)]
+        if numeric:
+            matched = numeric
+        return matched[:COMPARISON_EVIDENCE_LIMIT]
+    return matched[:ANSWER_EVIDENCE_LIMIT]
 
 
 def explicit_short_source_answer(session, question: str, hits: list) -> dict | None:
@@ -79,13 +145,13 @@ def ask_knowledge(user: User):
             session, question, user.class_id,
             current_app.extensions["embedding_provider"],
             current_app.extensions["vector_store"],
-            limit=4,
+            limit=ANSWER_CANDIDATE_LIMIT,
         )
     except ProviderUnavailable:
         return jsonify(error="vector_unavailable"), 503
     if not hits:
         return jsonify(answer="资料中未找到相关内容", citations=[])
-    chosen = hits[:4]
+    chosen = select_answer_evidence(session, question, hits)
     sources = [{
         "citation": index, "title": public_hit(session, hit)["material_title"],
         "chunk_index": hit.chunk.chunk_index, "text": hit.chunk.chunk_text,

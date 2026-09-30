@@ -55,7 +55,7 @@ def test_ask_retrieves_only_latest_question_for_database_class(tmp_path, monkeyp
     response = client.post("/api/ask", json={"question": "new", "class_id": 2,
         "history": [{"role": "user", "content": "old"}]}, headers=headers)
     assert response.status_code == 200
-    assert observed == [("new", 1, 4)]
+    assert observed == [("new", 1, 12)]
 
 
 def test_no_evidence_never_calls_chat_provider(tmp_path, monkeypatch):
