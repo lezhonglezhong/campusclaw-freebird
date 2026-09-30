@@ -20,7 +20,19 @@ The system SHALL expose `POST /api/ask` to authenticated teachers and students. 
 
 ### Requirement: Evidence is retrieved before generation
 
-The ask workflow SHALL run class-scoped hybrid retrieval using only the latest question and SHALL select at most the top four surviving hits. If there are no hits, the server SHALL return HTTP 200 with `answer` equal to `资料中未找到相关内容` and `citations` equal to an empty list. It MUST NOT call the chat provider on that path.
+The ask workflow SHALL run class-scoped hybrid retrieval using only the latest question and SHALL retrieve a bounded candidate pool before selecting answer evidence. It SHALL remove duplicate chunks and exclude candidates with no meaningful lexical relationship to the current question when stronger related candidates exist. For comparison questions, selection SHALL retain the distinct related chunks needed to compare all retrieved alternatives, rather than truncating the prompt to the first four candidates. When lexical selection cannot distinguish semantically retrieved candidates, the workflow MAY retain a bounded rank-ordered fallback set. If there are no surviving candidates, the server SHALL return HTTP 200 with `answer` equal to `资料中未找到相关内容` and `citations` equal to an empty list. It MUST NOT call the chat provider on that path. This answer-specific selection MUST NOT change the independent retrieval endpoint's 0.35 vector cutoff, RRF fusion, or class-scoping rules.
+
+#### Scenario: Irrelevant background is omitted from a comparison prompt
+- **WHEN** the bounded candidates contain separate chunks for building decreases of 150, 300, and 40 units plus an unrelated experiment-background chunk
+- **THEN** the provider receives all three value-bearing chunks and does not receive the unrelated background chunk
+
+#### Scenario: Semantic fallback remains bounded
+- **WHEN** hybrid retrieval returns candidates that have no meaningful literal overlap with the question
+- **THEN** the provider receives only a bounded rank-ordered fallback set rather than the whole knowledge base
+
+#### Scenario: Independent retrieval behavior is unchanged
+- **WHEN** a client uses keyword, vector, or hybrid retrieval independently of asking
+- **THEN** the existing class isolation, 0.35 vector cutoff, and RRF fusion behavior remain in force
 
 #### Scenario: Unrelated question bypasses the chat provider
 - **WHEN** hybrid retrieval finds no same-class evidence for the latest question
@@ -32,11 +44,23 @@ The ask workflow SHALL run class-scoped hybrid retrieval using only the latest q
 
 ### Requirement: Generated answers are grounded and citation ordered
 
-When evidence exists, the server SHALL call the configured chat-provider interface with a server-authored instruction, the current question, bounded prior history, and for each selected hit only its citation number, material title, chunk index, and chunk text. It MUST NOT send raw vectors, vector-store point payloads, provider secrets, other-class chunks, or client-authored system instructions. The returned answer SHALL be short and use `[1]`, `[2]`, and later markers only for supplied evidence. The response `citations` list SHALL preserve the exact numbering and order used in the prompt and SHALL expose the same traceable fields as retrieval hits. If the provider declares evidence insufficient for a question explicitly asking for a named material's own content, but an authorized selected chunk contains that material's complete short original text, the system SHALL answer with that literal text and a traceable citation instead of an empty no-evidence response. It SHALL NOT use this exception to explain a concept from the title alone or to present a partial long source as complete.
+When evidence exists, the server SHALL select a bounded subset of the class-scoped hybrid retrieval candidates that is relevant to the question before calling the configured chat-provider interface. For a comparison question, the subset SHALL retain the distinct cited chunks containing the values needed to compare the alternatives, while excluding candidates that do not support the answer. The server SHALL call the provider with a server-authored instruction, the current question, bounded prior history, and for each selected hit only its citation number, material title, chunk index, and chunk text. It MUST NOT send raw vectors, vector-store point payloads, provider secrets, other-class chunks, or client-authored system instructions. The returned answer SHALL be short and use `[1]`, `[2]`, and later markers only for supplied evidence. The response `citations` list SHALL contain only the distinct, valid markers used in the answer, in their first-appearance order, and SHALL renumber both the returned markers and citations consistently. A numerical answer SHALL cite chunk text that contains each reported numeric value; the server SHALL retry once when citations are missing, malformed, unsupported, or numerically inconsistent, and SHALL return HTTP 503 rather than display a second unsupported answer. If the provider declares evidence insufficient for a question explicitly asking for a named material's own content, but an authorized selected chunk contains that material's complete short original text, the system SHALL answer with that literal text and a traceable citation instead of an empty no-evidence response. It SHALL NOT use this exception to explain a concept from the title alone or to present a partial long source as complete.
+
+#### Scenario: Answer returns only sources it cites
+- **WHEN** the selected prompt evidence contains four chunks but the generated answer cites only chunks 2 and 4
+- **THEN** the response contains only two source cards, renumbered to match the answer markers in their first-appearance order
 
 #### Scenario: Answer markers align with citation order
-- **WHEN** the top same-class evidence chunks are numbered 1 through N for the provider
-- **THEN** the response citations use that same order and every answer marker refers to the citation at that position
+- **WHEN** valid answer markers refer to selected same-class evidence chunks
+- **THEN** the response citations follow first marker appearance and both markers and cards use the same dense numbering
+
+#### Scenario: Comparison retains all cited numeric evidence
+- **WHEN** a question asks which building's electricity use decreased the most and separate relevant chunks contain the compared building values
+- **THEN** the provider receives those value-bearing chunks and the response cites the chunks that support its comparison rather than unrelated experiment background
+
+#### Scenario: Unsupported numerical answer is rejected
+- **WHEN** a generated answer reports a numeric value absent from its cited chunk text on both attempts
+- **THEN** the endpoint returns HTTP 503 with its stable chat error and no answer or citations
 
 #### Scenario: Provider receives no foreign or vector data
 - **WHEN** the server assembles an answer-provider request
