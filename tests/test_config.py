@@ -42,3 +42,14 @@ def test_token_compose_and_example_contain_no_real_secret() -> None:
     assert "TOKEN_TTL_SECONDS" in compose and "TOKEN_TTL_SECONDS" in example
     assert "SESSION_SECRET" not in combined
     assert "test-token-secret" not in combined
+
+
+def test_gateway_configuration_uses_course_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    from campusclaw.runtime_config import load_gateway_settings
+    monkeypatch.setenv("EMBEDDING_BASE_URL", "https://gateway.example/v1/")
+    monkeypatch.setenv("EMBEDDING_API_KEY", "private")
+    settings = load_gateway_settings()
+    assert settings.embedding_base_url == "https://gateway.example/v1"
+    assert settings.embedding_model == "course-embedding"
+    assert settings.chat_model == "course-chat"
+    assert settings.embedding_dim == 2048

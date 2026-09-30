@@ -9,6 +9,7 @@ from flask import Flask, jsonify
 from campusclaw.auth import auth_bp
 from campusclaw.db import init_db
 from campusclaw.materials import materials_bp
+from campusclaw.runtime_config import ConfigurationError, load_gateway_settings
 from campusclaw.seed import register_seed_command
 
 
@@ -43,7 +44,7 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     database_path = Path(app.instance_path) / "campusclaw.sqlite3"
     app.config.from_mapping(
-        DATABASE_URL=f"sqlite:///{database_path}",
+        DATABASE_URL=os.environ.get("DATABASE_URL", f"sqlite:///{database_path}"),
         MATERIAL_STORAGE_DIR=str(Path(app.instance_path) / "materials"),
         TOKEN_SIGNING_SECRET=os.environ.get("TOKEN_SIGNING_SECRET"),
         TOKEN_TTL_SECONDS=os.environ.get("TOKEN_TTL_SECONDS", DEFAULT_TOKEN_TTL_SECONDS),
@@ -54,6 +55,13 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
         app.config.update(test_config)
 
     _validate_token_config(app)
+    try:
+        gateway_settings = load_gateway_settings(os.environ | {
+            "DATABASE_URL": str(app.config["DATABASE_URL"]),
+        })
+    except ConfigurationError as exc:
+        raise RuntimeError(str(exc)) from exc
+    app.config["GATEWAY_SETTINGS"] = gateway_settings
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
     register_seed_command(app)
