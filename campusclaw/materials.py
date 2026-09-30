@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
 from campusclaw.models import Material, User
-from campusclaw.knowledge_indexing import ensure_material_knowledge
+from campusclaw.knowledge_indexing import ensure_material_knowledge, vectorize_entry
 from campusclaw.retrieval import index_material, remove_material_from_index
 
 
@@ -189,7 +189,11 @@ def upload_material(user: User):
         db_session.add(material)
         db_session.flush()
         index_material(db_session, material, content)
-        ensure_material_knowledge(db_session, material, content)
+        entry = ensure_material_knowledge(db_session, material, content)
+        vectorize_entry(
+            db_session, entry, current_app.extensions["embedding_provider"],
+            current_app.extensions["vector_store"],
+        )
         db_session.commit()
     except OSError:
         db_session.rollback()

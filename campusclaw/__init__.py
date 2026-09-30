@@ -7,9 +7,11 @@ import os
 from flask import Flask, jsonify
 
 from campusclaw.auth import auth_bp
+from campusclaw.ai_providers import OpenAIChatProvider, OpenAIEmbeddingProvider
 from campusclaw.db import init_db
 from campusclaw.materials import materials_bp
 from campusclaw.runtime_config import ConfigurationError, load_gateway_settings
+from campusclaw.vector_store import QdrantVectorStore
 from campusclaw.seed import register_seed_command
 
 
@@ -62,6 +64,9 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     except ConfigurationError as exc:
         raise RuntimeError(str(exc)) from exc
     app.config["GATEWAY_SETTINGS"] = gateway_settings
+    app.extensions["embedding_provider"] = OpenAIEmbeddingProvider(gateway_settings)
+    app.extensions["chat_provider"] = OpenAIChatProvider(gateway_settings)
+    app.extensions["vector_store"] = QdrantVectorStore(gateway_settings)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
     register_seed_command(app)

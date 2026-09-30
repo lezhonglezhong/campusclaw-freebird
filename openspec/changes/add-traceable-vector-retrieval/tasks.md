@@ -13,7 +13,7 @@
 ## 2. Index Lifecycle
 
 - [x] 2.1 Implement source-body persistence and idempotent automatic chunk creation for upload and seed paths, keeping keyword-ready text when embedding is unavailable and never exposing provider details; verify with `python -m pytest -q tests/test_upload.py tests/test_seed.py tests/test_knowledge_indexing.py`.
-- [ ] 2.2 Implement vector upsert/delete orchestration with point IDs equal to chunk IDs, identifier-only payloads, per-chunk vector status, and no partial point on failed embedding; verify with `python -m pytest -q tests/test_vector_indexing.py`.
+- [x] 2.2 Implement vector upsert/delete orchestration with point IDs equal to chunk IDs, identifier-only payloads, per-chunk vector status, and no partial point on failed embedding; verify with `python -m pytest -q tests/test_vector_indexing.py`.
 - [ ] 2.3 Implement `POST /api/materials/<material_id>/reindex` with Bearer-token teacher authorization, database-resolved class ownership, strategy validation before replacement, retry-safe replacement, and cross-class 404 behavior; verify with `python -m pytest -q tests/test_material_reindex.py tests/test_authorization.py tests/test_token_auth.py`.
 - [ ] 2.4 Extend material deletion and seed/backfill behavior to remove or create relational chunks and Qdrant points without duplicates or orphans; verify with `python -m pytest -q tests/test_material_delete.py tests/test_seed.py tests/test_vector_indexing.py`.
 
