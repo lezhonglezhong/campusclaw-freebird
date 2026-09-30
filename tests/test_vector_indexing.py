@@ -6,6 +6,7 @@ from campusclaw import create_app
 from campusclaw.ai_providers import ProviderUnavailable
 from campusclaw.knowledge_indexing import ensure_material_knowledge, vectorize_entry
 from campusclaw.models import Class, Material, User
+from campusclaw.seed import seed_data
 
 
 class FakeStore:
@@ -65,3 +66,26 @@ def test_failed_embedding_creates_no_point(tmp_path):
     assert entry.vector_status == "failed"
     assert all(chunk.text_status == "ready" and chunk.vector_status == "failed" for chunk in entry.chunks)
     assert store.points == []
+
+
+def test_material_deletion_removes_ready_points(tmp_path):
+    app = create_app({
+        "TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'delete.sqlite3'}",
+        "MATERIAL_STORAGE_DIR": str(tmp_path / "materials"), "TOKEN_SIGNING_SECRET": "secret",
+    })
+    seed_data(app)
+    store = FakeStore()
+    app.extensions["vector_store"] = store
+
+    class Embedder:
+        def embed(self, texts): return [[0.0] * 2048]
+
+    app.extensions["embedding_provider"] = Embedder()
+    client = app.test_client()
+    login = client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    headers = {"Authorization": f"Bearer {login.json['access_token']}"}
+    material = app.extensions["sqlalchemy"]["session"].query(Material).filter_by(class_id=1).one()
+    assert client.post(f"/api/materials/{material.id}/reindex", json={}, headers=headers).status_code == 200
+    point_ids = [point["id"] for point in store.points]
+    assert client.delete(f"/api/materials/{material.id}", headers=headers).status_code == 204
+    assert store.deleted == point_ids

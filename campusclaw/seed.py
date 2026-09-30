@@ -8,6 +8,8 @@ from werkzeug.security import generate_password_hash
 from campusclaw.models import Class, Material, User
 from campusclaw.retrieval import index_material
 from campusclaw.knowledge_indexing import ensure_material_knowledge
+from campusclaw.knowledge_indexing import vectorize_entry
+from campusclaw.models import KnowledgeEntry
 
 
 SEED_ACCOUNTS = {
@@ -66,8 +68,30 @@ def seed_data(app: Flask) -> None:
             material.content_path = str(seed_path)
         session.flush()
         index_material(session, material, seed_content)
-        ensure_material_knowledge(session, material, seed_content)
+        entry = ensure_material_knowledge(session, material, seed_content)
+        if entry.vector_status == "pending":
+            vectorize_entry(session, entry, app.extensions["embedding_provider"], app.extensions["vector_store"])
     session.commit()
+
+
+def backfill_knowledge(app: Flask) -> int:
+    """Create missing relational chunk sets for existing UTF-8 materials."""
+    session = app.extensions["sqlalchemy"]["session"]
+    count = 0
+    for material in session.query(Material).order_by(Material.id):
+        if session.query(KnowledgeEntry).filter_by(material_id=material.id).first() is not None:
+            continue
+        try:
+            body = Path(material.content_path).read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            continue
+        if not body:
+            continue
+        entry = ensure_material_knowledge(session, material, body)
+        vectorize_entry(session, entry, app.extensions["embedding_provider"], app.extensions["vector_store"])
+        count += 1
+    session.commit()
+    return count
 
 
 def register_seed_command(app: Flask) -> None:
@@ -76,3 +100,7 @@ def register_seed_command(app: Flask) -> None:
     @app.cli.command("seed")
     def seed_command() -> None:
         seed_data(app)
+
+    @app.cli.command("backfill-knowledge")
+    def backfill_command() -> None:
+        backfill_knowledge(app)

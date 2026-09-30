@@ -15,6 +15,7 @@ from campusclaw.knowledge_indexing import ensure_material_knowledge, vectorize_e
 from campusclaw.knowledge_indexing import replace_material_chunks
 from campusclaw.chunking import ChunkingError, chunk_text
 from campusclaw.models import KnowledgeEntry
+from campusclaw.ai_providers import ProviderUnavailable
 from campusclaw.retrieval import index_material, remove_material_from_index
 
 
@@ -160,6 +161,12 @@ def delete_material(user: User, material_id: int):
     content_path = Path(material.content_path)
     staged_path: Path | None = None
     try:
+        ready_ids = [
+            chunk.id for chunk in material.knowledge_entry.chunks
+            if chunk.vector_status == "ready"
+        ] if material.knowledge_entry is not None else []
+        if ready_ids:
+            current_app.extensions["vector_store"].delete(ready_ids)
         if content_path.is_file():
             staged_path = content_path.with_name(f".{content_path.name}.{uuid4().hex}.deleting")
             os.replace(content_path, staged_path)
@@ -168,6 +175,9 @@ def delete_material(user: User, material_id: int):
         db_session.commit()
         if staged_path is not None:
             staged_path.unlink()
+    except ProviderUnavailable:
+        db_session.rollback()
+        return jsonify(error="vector_store_unavailable"), 503
     except OSError:
         db_session.rollback()
         if staged_path is not None and staged_path.exists():
