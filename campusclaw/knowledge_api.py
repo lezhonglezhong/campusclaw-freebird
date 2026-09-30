@@ -2,6 +2,7 @@
 
 import re
 import unicodedata
+from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -30,6 +31,9 @@ _QUESTION_STOP_CHARS = set("哪个一什么的了是有吗呢啊请问最更多�
 _QUESTION_STOP_WORDS = {
     "a", "an", "and", "are", "is", "of", "or", "the", "to", "what", "which", "who",
 }
+_BRACKET_PATTERN = re.compile(r"\[([^\]]*)\]")
+_NUMBER_PATTERN = re.compile(r"(?<!\d)(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?(?!\d)")
+_CLAIM_SPLIT_PATTERN = re.compile(r"[。！？；\n，、,;!?]+")
 
 
 def parse_ask_payload(payload: object) -> tuple[str, list[dict[str, str]]]:
@@ -103,6 +107,77 @@ def select_answer_evidence(session, question: str, hits: list) -> list:
     return matched[:ANSWER_EVIDENCE_LIMIT]
 
 
+def _normalized_number(value: str) -> str:
+    percent = value.endswith("%")
+    raw = value.rstrip("%").replace(",", "")
+    try:
+        normalized = format(Decimal(raw).normalize(), "f")
+    except InvalidOperation:
+        normalized = raw
+    return normalized + ("%" if percent else "")
+
+
+def _answer_markers(answer: str, source_count: int) -> list[int] | None:
+    bracketed = _BRACKET_PATTERN.findall(answer)
+    if not bracketed or any(not value.isdecimal() for value in bracketed):
+        return None
+    markers = [int(value) for value in bracketed]
+    if any(marker < 1 or marker > source_count for marker in markers):
+        return None
+    return markers
+
+
+def _numbers_are_cited(answer: str, chosen: list) -> bool:
+    """Require each numeric claim to cite a chunk containing that value."""
+    for claim in _CLAIM_SPLIT_PATTERN.split(answer):
+        claim_without_markers = _BRACKET_PATTERN.sub("", claim)
+        numbers = {
+            _normalized_number(value)
+            for value in _NUMBER_PATTERN.findall(claim_without_markers)
+        }
+        if not numbers:
+            continue
+        claim_markers = [int(value) for value in _BRACKET_PATTERN.findall(claim)]
+        if not claim_markers:
+            return False
+        supported = {
+            _normalized_number(value)
+            for marker in claim_markers
+            for value in _NUMBER_PATTERN.findall(chosen[marker - 1].chunk.chunk_text)
+        }
+        if not numbers.issubset(supported):
+            return False
+    return True
+
+
+def validated_answer_response(session, answer: str, chosen: list) -> dict | None:
+    """Validate citations and project only used sources with dense numbering."""
+    markers = _answer_markers(answer, len(chosen))
+    if markers is None or not _numbers_are_cited(answer, chosen):
+        return None
+    ordered = list(dict.fromkeys(markers))
+    renumber = {marker: index for index, marker in enumerate(ordered, start=1)}
+    rewritten = _BRACKET_PATTERN.sub(
+        lambda match: f"[{renumber[int(match.group(1))]}]",
+        answer,
+    )
+    return {
+        "answer": rewritten.strip(),
+        "citations": [
+            dict(number=renumber[marker], **public_hit(session, chosen[marker - 1]))
+            for marker in ordered
+        ],
+    }
+
+
+def _declares_insufficient_evidence(answer: str) -> bool:
+    folded = answer.casefold()
+    return (
+        "资料不足" in answer or "未找到相关" in answer
+        or "not enough information" in folded or "insufficient information" in folded
+    )
+
+
 def explicit_short_source_answer(session, question: str, hits: list) -> dict | None:
     """Quote a complete short source only for an unambiguous material-content question."""
     normalized_question = unicodedata.normalize("NFKC", question).casefold()
@@ -164,31 +239,26 @@ def ask_knowledge(user: User):
     for attempt in range(2):
         try:
             answer = current_app.extensions["chat_provider"].answer(
-                instruction + (" 请务必在答案中使用有效的 [n] 引用编号。" if attempt else ""),
+                instruction + (
+                    " 请务必在每个事实后使用有效的 [n] 引用编号，"
+                    "且答案中的每个数字必须出现在对应引用的资料中。"
+                    if attempt else ""
+                ),
                 question, history, sources,
             )
         except ProviderUnavailable:
             return jsonify(error="chat_unavailable"), 503
         if not isinstance(answer, str) or not answer.strip() or len(answer) > 2000:
             return jsonify(error="chat_unavailable"), 503
-        markers = [int(value) for value in re.findall(r"\[(\d+)\]", answer)]
-        if not markers and (
-            "资料不足" in answer or "未找到相关" in answer
-            or "not enough information" in answer.casefold()
-            or "insufficient information" in answer.casefold()
-        ):
+        if _declares_insufficient_evidence(answer):
             literal_answer = explicit_short_source_answer(session, question, chosen)
             if literal_answer is not None:
                 return jsonify(literal_answer)
             return jsonify(answer="资料中未找到相关内容", citations=[])
-        if markers and all(1 <= marker <= len(chosen) for marker in markers):
-            break
-    else:
-        return jsonify(error="chat_unavailable"), 503
-    return jsonify(
-        answer=answer.strip(),
-        citations=[dict(number=index, **public_hit(session, hit)) for index, hit in enumerate(chosen, start=1)],
-    )
+        validated = validated_answer_response(session, answer, chosen)
+        if validated is not None:
+            return jsonify(validated)
+    return jsonify(error="chat_unavailable"), 503
 
 
 @knowledge_bp.get("/retrieval")
