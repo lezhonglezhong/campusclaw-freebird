@@ -1,14 +1,66 @@
 services:
+  mysql:
+    image: docker.m.daocloud.io/mysql:8
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--ngram-token-size=2"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: campusclaw
+      MYSQL_USER: campusclaw
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  qdrant:
+    image: docker.m.daocloud.io/qdrant/qdrant:v1.15.5
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
   campusclaw:
     build: .
     ports:
       - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - ./instance:/app/instance
     environment:
+      DATABASE_URL: mysql+pymysql://campusclaw:${MYSQL_PASSWORD}@mysql:3306/campusclaw?charset=utf8mb4
+      QDRANT_URL: http://qdrant:6333
       TOKEN_SIGNING_SECRET: ${TOKEN_SIGNING_SECRET:?TOKEN_SIGNING_SECRET is required}
       TOKEN_TTL_SECONDS: ${TOKEN_TTL_SECONDS:-3600}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-course-embedding}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-2048}
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-}
+      CHAT_API_KEY: ${CHAT_API_KEY:-}
+      CHAT_MODEL: ${CHAT_MODEL:-course-chat}
+      GATEWAY_TIMEOUT_SECONDS: ${GATEWAY_TIMEOUT_SECONDS:-10}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
       interval: 10s
       timeout: 3s
       retries: 3
       start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  qdrant_data:

@@ -1,7 +1,7 @@
 """SQLAlchemy setup shared by CampusClaw persistence code."""
 
 from flask import Flask
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
 
@@ -36,7 +36,18 @@ def init_db(app: Flask) -> None:
 def initialize_knowledge_index(session, dialect: str) -> None:
     """Create the local FTS companion only where the dialect supports it."""
     if dialect == "sqlite":
-        session.execute(__import__("sqlalchemy").text(
+        session.execute(text(
             "CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_chunk_retrieval "
             "USING fts5(chunk_id UNINDEXED, class_id UNINDEXED, chunk_text)"
         ))
+    elif dialect == "mysql":
+        exists = session.execute(text(
+            "SELECT COUNT(*) FROM information_schema.statistics "
+            "WHERE table_schema = DATABASE() AND table_name = 'knowledge_chunks' "
+            "AND index_name = 'idx_knowledge_chunks_text_ngram'"
+        )).scalar_one()
+        if not exists:
+            session.execute(text(
+                "CREATE FULLTEXT INDEX idx_knowledge_chunks_text_ngram "
+                "ON knowledge_chunks (chunk_text) WITH PARSER ngram"
+            ))

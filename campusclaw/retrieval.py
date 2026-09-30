@@ -7,6 +7,8 @@ from campusclaw.models import Material
 
 
 def initialize_retrieval_index(session: Session) -> None:
+    if session.get_bind().dialect.name != "sqlite":
+        return
     session.execute(text("""
         CREATE VIRTUAL TABLE IF NOT EXISTS material_retrieval
         USING fts5(material_id UNINDEXED, class_id UNINDEXED, content)

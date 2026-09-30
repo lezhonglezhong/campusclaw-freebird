@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.git
+__pycache__
+*.pyc
+.pytest_cache
+instance
+tests
+openspec
+.agents
+AGENTS.md
