@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from flask import Flask
+import click
 from werkzeug.security import generate_password_hash
 
 from campusclaw.models import Class, Material, User
@@ -106,3 +107,9 @@ def register_seed_command(app: Flask) -> None:
     @app.cli.command("backfill-knowledge")
     def backfill_command() -> None:
         backfill_knowledge(app)
+
+    @app.cli.command("migrate-legacy-sqlite")
+    @click.option("--source", type=click.Path(path_type=Path), default=None)
+    def migrate_command(source: Path | None) -> None:
+        from campusclaw.migration import migrate_legacy_sqlite
+        migrate_legacy_sqlite(app, source)

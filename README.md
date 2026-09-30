@@ -8,21 +8,42 @@ CampusClaw 是“互联网软件技术开发与实践”课程的三人小组学
 
 ## Docker Compose 启动
 
-项目推荐使用 Docker Compose 作为可复现启动方式。首次启动会拉取基础镜像、
-安装依赖并构建应用。
+Compose 启动应用、MySQL 8 与 Qdrant。MySQL 和 Qdrant 使用持久卷，只在
+Compose 内部网络开放；应用映射本机 8000 端口。首次启动先编辑私有配置：
 
 ```bash
 cd campusclaw-freebird
 cp .env.example .env
-# 编辑 .env，为 TOKEN_SIGNING_SECRET 设置不可提交的随机值。
+# 为 TOKEN_SIGNING_SECRET、MYSQL_ROOT_PASSWORD、MYSQL_PASSWORD 分别设置随机值；
+# 将 EMBEDDING_API_KEY 换成课程网关提供的私有密钥。
 docker compose up --build -d --wait
 docker compose exec campusclaw python -m flask --app campusclaw seed
 ```
 
 浏览器访问 `http://localhost:8000/login`。
 
-使用 `docker compose ps` 可确认服务状态为 `healthy`；健康检查地址为
-`/health`。后续启动若本地镜像仍在，可使用 `docker compose up -d`。
+使用 `docker compose ps` 可确认三个服务状态为 `healthy`；应用健康检查
+地址为 `/health`。若尚未配置网关密钥，上传与关键词检索仍可使用，向量
+检索、混合检索和问答会返回明确的 503。配置密钥后，可通过教师页面重建
+索引，或使用下方回填命令。
+
+### 从旧 SQLite 容器迁移
+
+升级前先保留旧容器的 `/app/instance`。在仓库目录中，确认本地尚无
+`instance` 目录，然后执行：
+
+```bash
+docker cp campusclaw-freebird-campusclaw-1:/app/instance ./instance
+docker compose up --build -d --wait
+docker compose exec campusclaw python -m flask --app campusclaw migrate-legacy-sqlite
+docker compose exec campusclaw python -m flask --app campusclaw backfill-knowledge
+```
+
+迁移命令只接受空的 MySQL 目标；旧 SQLite 文件和原始材料保留在忽略 Git 的
+`instance` 目录中。全新安装直接执行 `seed`，无需运行迁移。
+若旧资料保存在 `instance/legacy-container` 等独立目录，可用
+`migrate-legacy-sqlite --source /app/instance/legacy-container/campusclaw.sqlite3`；
+迁移会将材料路径指向该目录中的文件，不覆盖其他已有资料。
 
 ## Token 登录与接口调用
 
@@ -44,6 +65,37 @@ curl -s http://localhost:8000/api/me \
 退出登录会清除浏览器 `sessionStorage`；当前实现没有服务端 token 吊销列表，
 已经复制的 token 会在到期前保持有效。
 
+## 知识库切片、检索与问答
+
+上传文字或 UTF-8 `.txt`/`.md` 后，系统保留原文并默认按最多 800 字、
+重叠 80 字切片。教师可在页面选择自动、自定义或 Markdown 标题切片方式，
+对本班材料重建索引。向量点仅保存切片 ID、材料 ID 和班级等标识字段；
+正文与来源保存在 MySQL。
+
+课程网关的 `EMBEDDING_BASE_URL` 配到 `/v1`，程序自行调用
+`/embeddings`；嵌入模型为 `course-embedding`。`EMBEDDING_DIM=2048` 只
+用于建库和校验返回向量，不随嵌入请求发送。对话使用同一网关的
+`/chat/completions` 与 `course-chat`；如需单独的地址或密钥，可设置
+`CHAT_BASE_URL` 和 `CHAT_API_KEY`。所有密钥只放在服务器的 `.env`，不能
+提交到 Git。单次网关请求本地限制为 20 MB。
+
+`GET /api/retrieval?q=<问题>&mode=keyword|vector|hybrid` 检索当前登录用户
+所属班级的切片；缺省模式为 `hybrid`。向量相似度低于 0.35 的候选会被
+过滤，混合模式按 RRF 排序。每条结果含材料标题、切片编号、字符位置和
+来源入口。旧的 `/api/materials/retrieve` 接口暂时保留。
+
+`POST /api/ask` 接收 JSON `{"question":"你的问题"}`。服务器只检索当前
+问题，最多取 4 个相关切片交给 `course-chat`，返回带 `[1]` 等编号的答案
+及对应来源。确实没有证据时返回“资料中未找到相关内容”，不调用对话模型。
+向量库或网关故障时返回 503，不生成无依据答案。所有这些接口都要求上面的
+Bearer token。
+
+对已有材料补建缺失切片：
+
+```bash
+docker compose exec campusclaw python -m flask --app campusclaw backfill-knowledge
+```
+
 
 ## 本地测试账号
 
@@ -59,6 +111,6 @@ curl -s http://localhost:8000/api/me \
 - 登录返回 JWT，受保护请求使用 `Authorization: Bearer <access_token>`，旧
   Cookie 不能获得授权。
 - 教师可上传 `.txt` 或 `.md` 材料，也可直接输入文字；学生只读。
-- 材料列表、正文检索和下载均按登录用户所属班级隔离。
-- 正文检索结果显示材料来源、班级、上传者和匹配片段；中文关键词可检索。
+- 材料列表、切片检索、问答和下载均按登录用户当前数据库班级隔离。
+- 关键词、向量和混合检索返回可追溯来源；无证据不调用对话模型。
 - 下载中文命名的材料会保留中文名称，并自动补齐 `.txt` 或 `.md` 后缀。

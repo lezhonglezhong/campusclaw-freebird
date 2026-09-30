@@ -38,7 +38,7 @@
 ## 6. Reproducible Runtime and Documentation
 
 - [x] 6.1 Add required Python dependencies and extend Compose with healthy MySQL 8 and Qdrant services, persistent volumes, internal-only dependency ports, application dependency checks, MySQL ngram configuration, and documented environment placeholders without real secrets; verify with `docker compose config --quiet`.
-- [ ] 6.2 Update seed/backfill commands and README instructions for first startup, JWT Bearer login and request headers, private course gateway configuration (`course-embedding`, 2048 dimensions, and `course-chat`) without a real key, reindexing after configuration, the 20 MB request ceiling, three retrieval modes, grounded answers, and dependency failure behavior; verify with `python -m pytest -q tests/test_seed.py tests/test_config.py tests/test_health.py tests/test_token_auth.py`.
+- [x] 6.2 Update seed/backfill commands and README instructions for first startup, JWT Bearer login and request headers, private course gateway configuration (`course-embedding`, 2048 dimensions, and `course-chat`) without a real key, reindexing after configuration, the 20 MB request ceiling, three retrieval modes, grounded answers, and dependency failure behavior; verify with `python -m pytest -q tests/test_seed.py tests/test_config.py tests/test_health.py tests/test_token_auth.py`.
 
 ## 7. Acceptance
 

@@ -48,6 +48,10 @@ def refresh_keyword_index(session: Session, entry: KnowledgeEntry, old_ids: list
     """Keep SQLite FTS rows in step with relational chunks; MySQL indexes the table."""
     if session.get_bind().dialect.name != "sqlite":
         return
+    session.execute(text(
+        "DELETE FROM knowledge_chunk_retrieval "
+        "WHERE chunk_id NOT IN (SELECT id FROM knowledge_chunks)"
+    ))
     for chunk_id in old_ids or []:
         session.execute(text("DELETE FROM knowledge_chunk_retrieval WHERE chunk_id = :id"), {"id": chunk_id})
     for chunk in entry.chunks:
