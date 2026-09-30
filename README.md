@@ -71,6 +71,10 @@ curl -s http://localhost:8000/api/me \
 重叠 80 字切片。教师可在页面选择自动、自定义或 Markdown 标题切片方式，
 对本班材料重建索引。向量点仅保存切片 ID、材料 ID 和班级等标识字段；
 正文与来源保存在 MySQL。
+上传成功后页面会自动打开新材料，详情下方直接显示原文；已有的文字、`.txt`
+和 `.md` 材料也可点击列表或检索来源预览，同时仍可下载。预览接口
+`GET /api/materials/<材料编号>/content` 返回 `material_id` 与 `content`，
+必须携带 Bearer token，且只能读取本人所在班级的材料。
 
 课程网关的 `EMBEDDING_BASE_URL` 配到 `/v1`，程序自行调用
 `/embeddings`；嵌入模型为 `course-embedding`。`EMBEDDING_DIM=2048` 只
@@ -83,6 +87,10 @@ curl -s http://localhost:8000/api/me \
 所属班级的切片；缺省模式为 `hybrid`。向量相似度低于 0.35 的候选会被
 过滤，混合模式按 RRF 排序。每条结果含材料标题、切片编号、字符位置和
 来源入口。旧的 `/api/materials/retrieve` 接口暂时保留。
+关键词和混合检索还会识别问题中明确出现的完整材料标题（至少 3 个字符）。
+因此即使正文很短，提问“某材料的内容是什么”也能定位其已入库切片；
+纯向量模式仍执行 0.35 相似度过滤。标题匹配不会跨班级，也不会把整库
+正文送给问答模型。
 
 `POST /api/ask` 接收 JSON `{"question":"你的问题"}`。服务器只检索当前
 问题，最多取 4 个相关切片交给 `course-chat`，返回带 `[1]` 等编号的答案
@@ -113,6 +121,8 @@ docker compose exec campusclaw python -m flask --app campusclaw backfill-knowled
 - 登录返回 JWT，受保护请求使用 `Authorization: Bearer <access_token>`，旧
   Cookie 不能获得授权。
 - 教师可上传 `.txt` 或 `.md` 材料，也可直接输入文字；学生只读。
+- 文字、`.txt`、`.md` 材料可在详情页直接预览原文，上传后自动打开，下载仍可用。
 - 材料列表、切片检索、问答和下载均按登录用户当前数据库班级隔离。
-- 关键词、向量和混合检索返回可追溯来源；无证据不调用对话模型。
+- 关键词、向量和混合检索返回可追溯来源；完整标题提问可定位同班级短材料，
+  无证据不调用对话模型。
 - 下载中文命名的材料会保留中文名称，并自动补齐 `.txt` 或 `.md` 后缀。
