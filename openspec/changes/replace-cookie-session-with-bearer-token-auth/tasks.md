@@ -38,5 +38,5 @@
 
 - [x] 5.1 Run the complete automated test suite and resolve all regressions introduced by the authentication migration.
   - Verification: `pytest -q`
-- [ ] 5.2 Strictly validate this OpenSpec change and the dependent traceable-retrieval change after implementation.
+- [x] 5.2 Strictly validate this OpenSpec change and the dependent traceable-retrieval change after implementation.
   - Verification: `openspec validate replace-cookie-session-with-bearer-token-auth --strict && openspec validate add-traceable-vector-retrieval --strict`

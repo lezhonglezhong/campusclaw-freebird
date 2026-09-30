@@ -22,13 +22,17 @@ The browser SHALL call `GET /api/me` with `Authorization: Bearer <access-token>`
 
 ### Requirement: Protected material browser workspace
 
-The system SHALL expose `GET /materials` as a data-free browser application shell. The workspace SHALL read the access token from `sessionStorage` and obtain current user and material data only through `GET /api/me`, `GET /api/materials`, and `GET /api/materials/<material_id>` requests carrying `Authorization: Bearer <access-token>`, so server-side role and class checks remain authoritative.
+The system SHALL expose `GET /materials` as a data-free browser application shell. The workspace SHALL read the access token from `sessionStorage` and obtain current user, material, and content-retrieval data only through authorized same-origin API requests carrying `Authorization: Bearer <access-token>`, including `GET /api/me`, `GET /api/materials`, `GET /api/materials/<material_id>`, and the content-retrieval endpoint, so server-side role and class checks remain authoritative.
 
 The workspace SHALL display the current database user account, role, and class context and a list of materials returned by the server. A user selecting a listed material SHALL be able to view its `id`, `display_name`, `class_id`, `uploader_id`, and `status`. A missing token or 401 response SHALL remove the token, clear protected material data, and return the browser to `/login`; a 404 response SHALL show a no-longer-available message without displaying protected material data.
 
 #### Scenario: User views own-class materials in the workspace
 - **WHEN** a class-A user's browser sends a valid Bearer token and opens `/materials`
 - **THEN** the page displays only material data returned by the server for the user's current database class A
+
+#### Scenario: User retrieves content in the workspace
+- **WHEN** an authenticated user submits a non-empty content query with a valid Bearer token
+- **THEN** the workspace displays only server-returned same-class results with their source material information
 
 #### Scenario: Expired browser session is redirected
 - **WHEN** a material workspace request receives HTTP 401 for a missing, invalid, or expired token
