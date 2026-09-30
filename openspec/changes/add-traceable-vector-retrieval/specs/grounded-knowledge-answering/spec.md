@@ -42,6 +42,14 @@ When evidence exists, the server SHALL call the configured chat-provider interfa
 - **WHEN** the server assembles an answer-provider request
 - **THEN** it contains only authorized source titles, chunk indices, chunk text, bounded history, and the current question, with no raw vectors or other-class data
 
+#### Scenario: Provider finds supplied evidence insufficient
+- **WHEN** the chat provider explicitly states that the supplied sources cannot support an answer
+- **THEN** the server returns the fixed no-evidence message with empty citations instead of an ungrounded answer or an error
+
+#### Scenario: Provider omits or misnumbers a citation
+- **WHEN** the first generated answer does not cite one of the supplied source numbers correctly
+- **THEN** the server retries once with the same bounded sources and rejects a second invalid answer with HTTP 503
+
 ### Requirement: Provider availability failures are safe and replaceable
 
 Embedding and chat generation SHALL be accessed through separate server-side provider contracts. The chat adapter SHALL append `/chat/completions` to the configured `/v1` base URL, send model `course-chat` with server-assembled `messages`, and authenticate server-side with the configured Bearer credential. Any serialized gateway request exceeding 20 MB SHALL be rejected before network I/O. The message serializer MAY represent a future visual input as an OpenAI-compatible `image_url` content part, but this change SHALL submit text-only knowledge sources and SHALL NOT add image upload or image-answering behavior. If the chat provider is not configured, unavailable, times out, rejects the request, or returns an invalid response after evidence was found, the ask endpoint SHALL return HTTP 503 with a stable error code and no provider credentials, raw response body, stack trace, or ungrounded fallback answer. The endpoint SHALL be non-streaming for this change.

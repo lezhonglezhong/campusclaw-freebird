@@ -29,10 +29,19 @@ def _windows(text: str, size: int = 800, overlap: int = 80, separator: str = "au
         end = limit
         if limit < len(text):
             fragment = text[start:limit]
-            candidates = [fragment.rfind(token) for token in ("\n\n", "\n", "。", "！", "？", ".", "!", "?")]
-            boundary = max(candidates)
-            if boundary >= max(1, size // 2):
-                end = start + boundary + 1
+            groups = {
+                "auto": (("\n\n",), ("\n",), ("。", "！", "？", ".", "!", "?")),
+                "blank_line": (("\n\n",),),
+                "newline": (("\n",),),
+                "sentence": (("。", "！", "？", ".", "!", "?"),),
+            }[separator]
+            threshold = max(size // 2, overlap + 1)
+            for tokens in groups:
+                candidates = [(fragment.rfind(token), len(token)) for token in tokens]
+                boundary, token_length = max(candidates)
+                if boundary >= threshold:
+                    end = start + boundary + token_length
+                    break
         if end <= start:
             end = min(len(text), start + size)
         result.append((text[start:end], start, end))
@@ -61,6 +70,9 @@ def _validate_custom(options: dict[str, Any]) -> tuple[int, int]:
         raise ChunkingError("overlap_percent must be between 0 and 50")
     if options.get("separator", "sentence") not in {"newline", "blank_line", "sentence"}:
         raise ChunkingError("unsupported separator")
+    for flag in ("remove_urls", "remove_emails", "collapse_whitespace"):
+        if flag in options and not isinstance(options[flag], bool):
+            raise ChunkingError(f"{flag} must be a boolean")
     return size, size * overlap_percent // 100
 
 
@@ -77,6 +89,8 @@ def chunk_text(body: str, strategy: str = "auto", options: dict[str, Any] | None
         pieces = _windows(prepared, size, overlap, options.get("separator", "sentence"))
     elif strategy == "hierarchy":
         starts = [match.start() for match in re.finditer(r"(?m)^#{1,3}\s+.+$", body)]
+        if starts and starts[0] != 0:
+            starts.insert(0, 0)
         starts.append(len(body))
         if len(starts) == 1:
             pieces = _windows(body)

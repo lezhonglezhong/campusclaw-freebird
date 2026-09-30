@@ -124,3 +124,42 @@ def test_provider_failure_or_unknown_citation_returns_safe_503(tmp_path, monkeyp
     app.extensions["chat_provider"] = BadCitation()
     assert client.post("/api/ask", json={"question": "test"}, headers=headers).status_code == 503
 
+
+def test_provider_says_evidence_insufficient_without_fabricating_citation(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    headers = login(client)
+    chunk = app.extensions["sqlalchemy"]["session"].query(KnowledgeChunk).filter_by(class_id=1).one()
+    monkeypatch.setattr("campusclaw.knowledge_api.hybrid_retrieve",
+                        lambda *args, **kwargs: [RankedChunk(chunk=chunk)])
+
+    class Insufficient:
+        def answer(self, *args): return "资料不足。"
+
+    app.extensions["chat_provider"] = Insufficient()
+    response = client.post("/api/ask", json={"question": "unknown"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json == {"answer": "资料中未找到相关内容", "citations": []}
+
+
+def test_invalid_citation_format_retries_once_with_same_sources(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    headers = login(client)
+    chunk = app.extensions["sqlalchemy"]["session"].query(KnowledgeChunk).filter_by(class_id=1).one()
+    monkeypatch.setattr("campusclaw.knowledge_api.hybrid_retrieve",
+                        lambda *args, **kwargs: [RankedChunk(chunk=chunk)])
+    calls = []
+
+    class Chat:
+        def answer(self, instruction, question, history, sources):
+            calls.append((instruction, sources))
+            return "Supported answer" if len(calls) == 1 else "Supported answer [1]"
+
+    app.extensions["chat_provider"] = Chat()
+    response = client.post("/api/ask", json={"question": "source?"}, headers=headers)
+    assert response.status_code == 200
+    assert len(calls) == 2
+    assert calls[0][1] == calls[1][1]
+    assert response.json["answer"].endswith("[1]")
+

@@ -20,6 +20,19 @@ def test_hierarchy_retains_heading() -> None:
     assert chunks[0].text.startswith("# Heading")
 
 
+def test_hierarchy_keeps_preamble_before_first_heading() -> None:
+    chunks = chunk_text("Introduction\n# Heading\nBody", "hierarchy")
+    assert chunks[0].text == "Introduction\n"
+    assert chunks[1].text.startswith("# Heading")
+
+
+def test_custom_separator_changes_preferred_boundary() -> None:
+    body = "a" * 60 + "\n" + "b" * 30 + "。" + "c" * 50
+    newline = chunk_text(body, "custom", {"max_length": 100, "overlap_percent": 0, "separator": "newline"})
+    sentence = chunk_text(body, "custom", {"max_length": 100, "overlap_percent": 0, "separator": "sentence"})
+    assert newline[0].end_offset != sentence[0].end_offset
+
+
 @pytest.mark.parametrize("options", [{"max_length": 99}, {"overlap_percent": 51}, {"separator": "comma"}])
 def test_invalid_custom_options_are_rejected(options) -> None:
     with pytest.raises(ChunkingError):

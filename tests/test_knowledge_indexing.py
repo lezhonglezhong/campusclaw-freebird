@@ -11,4 +11,5 @@ def test_seed_creates_one_source_first_index_per_material(tmp_path: Path) -> Non
     session = app.extensions["sqlalchemy"]["session"]
     entries = session.query(KnowledgeEntry).all()
     assert len(entries) == 2
-    assert all(entry.chunks and entry.vector_status == "pending" for entry in entries)
+    assert all(entry.chunks and entry.text_status == "ready" for entry in entries)
+    assert all(entry.vector_status in {"ready", "failed"} for entry in entries)

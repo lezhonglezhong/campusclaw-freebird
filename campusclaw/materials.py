@@ -76,6 +76,23 @@ def retrieve_materials(user: User):
     if not query:
         return jsonify(error="invalid_query"), 400
     session = current_app.extensions["sqlalchemy"]["session"]
+    if session.get_bind().dialect.name != "sqlite":
+        results = []
+        for material, entry in session.query(Material, KnowledgeEntry).join(
+            KnowledgeEntry, KnowledgeEntry.material_id == Material.id
+        ).filter(Material.class_id == user.class_id).order_by(Material.id):
+            position = entry.body_text.casefold().find(query.casefold())
+            if position < 0:
+                continue
+            start = max(0, position - 80)
+            results.append({
+                "material_id": material.id, "display_name": material.display_name,
+                "class_id": material.class_id, "class_name": material.class_.name,
+                "uploader_id": material.uploader_id,
+                "excerpt": entry.body_text[start:start + 240],
+                "download_url": f"/api/materials/{material.id}/download",
+            })
+        return jsonify(results=results)
     try:
         rows = session.execute(text("""
             SELECT m.id, m.display_name, m.class_id, c.name, m.uploader_id,
