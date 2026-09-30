@@ -173,3 +173,28 @@ def test_bearer_resolver_reloads_user_from_database(tmp_path: Path) -> None:
     response = client.get("/_resolved-user", headers=headers)
     assert response.status_code == 200
     assert response.json == {"role": "student", "class_id": 2}
+
+
+def test_materials_route_is_a_data_free_shell_without_token(tmp_path: Path) -> None:
+    app = seeded_token_app(tmp_path)
+    response = app.test_client().get("/materials")
+    assert response.status_code == 200
+    assert b"teacher-a" not in response.data
+    assert b"access_token" not in response.data
+
+
+def test_logout_does_not_revoke_or_set_cookie(tmp_path: Path) -> None:
+    app = seeded_token_app(tmp_path)
+    client = app.test_client()
+    headers = login_headers(client)
+    response = client.post("/logout")
+    assert response.status_code == 204
+    assert "Set-Cookie" not in response.headers
+    assert client.get("/api/me", headers=headers).status_code == 200
+
+
+def test_cookie_authentication_fallback_is_rejected(tmp_path: Path) -> None:
+    app = seeded_token_app(tmp_path)
+    client = app.test_client()
+    client.set_cookie("session", "legacy-session-value")
+    assert_unauthorized(client.get("/api/materials"))

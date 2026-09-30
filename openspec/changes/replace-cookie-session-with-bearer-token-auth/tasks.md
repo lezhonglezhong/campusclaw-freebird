@@ -13,7 +13,7 @@
   - Verification: `pytest -q tests/test_token_auth.py -k "missing or malformed or expired or signature or unknown or reload or bearer"`
 - [x] 2.3 Migrate `/api/me` and every existing protected API to the shared resolver so current database role and class membership govern authorization, never client input or token claims.
   - Verification: `pytest -q tests/test_auth.py tests/test_authorization.py tests/test_material_list.py tests/test_file_upload.py tests/test_material_download.py`
-- [ ] 2.4 Make `/materials` a data-free browser shell, make `/logout` return `204` without server-side revocation, remove Flask session authentication state, and explicitly reject cookie-only fallback.
+- [x] 2.4 Make `/materials` a data-free browser shell, make `/logout` return `204` without server-side revocation, remove Flask session authentication state, and explicitly reject cookie-only fallback.
   - Verification: `pytest -q tests/test_browser_session.py tests/test_token_auth.py -k "materials or logout or cookie"`
 - [ ] 2.5 Update backend test helpers and fixtures to authenticate with Bearer tokens, then retain regression coverage for teacher/student permissions and class isolation.
   - Verification: `pytest -q tests/test_auth.py tests/test_authorization.py tests/test_material_list.py tests/test_file_upload.py tests/test_material_download.py`

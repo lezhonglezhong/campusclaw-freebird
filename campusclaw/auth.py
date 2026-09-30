@@ -5,7 +5,7 @@ from functools import wraps
 from uuid import uuid4
 
 import jwt
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
+from flask import Blueprint, current_app, jsonify, render_template, request
 from werkzeug.security import check_password_hash
 
 from campusclaw.models import User
@@ -88,14 +88,6 @@ def user_payload(user: User) -> dict[str, int | str]:
     }
 
 
-def session_user() -> User | None:
-    """Resolve the current user from the signed session and persistence layer."""
-    user_id = session.get("user_id")
-    if not isinstance(user_id, int):
-        return None
-    return current_app.extensions["sqlalchemy"]["session"].get(User, user_id)
-
-
 def require_authenticated_api(view):
     """Require a Bearer token that resolves to a current database user."""
     @wraps(view)
@@ -151,16 +143,13 @@ def current_user(user: User):
 
 @auth_bp.post("/logout")
 def logout():
-    """Clear the signed browser session without exposing session contents."""
-    session.clear()
+    """Return compatibility success; clients discard stateless tokens locally."""
     return "", 204
 
 
 @auth_bp.get("/materials")
 def materials_page():
-    """Render the protected browser material workspace shell."""
-    if session_user() is None:
-        return redirect("/login")
+    """Render a public, data-free browser material workspace shell."""
     return render_template("materials.html")
 
 

@@ -45,7 +45,6 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     app.config.from_mapping(
         DATABASE_URL=f"sqlite:///{database_path}",
         MATERIAL_STORAGE_DIR=str(Path(app.instance_path) / "materials"),
-        SESSION_SECRET=os.environ.get("SESSION_SECRET"),
         TOKEN_SIGNING_SECRET=os.environ.get("TOKEN_SIGNING_SECRET"),
         TOKEN_TTL_SECONDS=os.environ.get("TOKEN_TTL_SECONDS", DEFAULT_TOKEN_TTL_SECONDS),
         TESTING=False,
@@ -55,7 +54,6 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
         app.config.update(test_config)
 
     _validate_token_config(app)
-    app.secret_key = app.config.get("SESSION_SECRET") or app.config["TOKEN_SIGNING_SECRET"]
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
     register_seed_command(app)
