@@ -170,6 +170,25 @@ def download_material(user: User, material_id: int):
     return send_file(content_path, as_attachment=True, download_name=download_name)
 
 
+@materials_bp.get("/<int:material_id>/content")
+@require_authenticated_api
+def material_content(user: User, material_id: int):
+    """Return retained source text only to members of the material's class."""
+    db_session = current_app.extensions["sqlalchemy"]["session"]
+    material = db_session.query(Material).filter_by(id=material_id, class_id=user.class_id).one_or_none()
+    if material is None:
+        return jsonify(error="not_found"), 404
+    entry = db_session.query(KnowledgeEntry).filter_by(material_id=material.id).one_or_none()
+    if entry is not None:
+        content = entry.body_text
+    else:
+        try:
+            content = Path(material.content_path).read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            return jsonify(error="not_found"), 404
+    return jsonify(material_id=material.id, content=content)
+
+
 @materials_bp.delete("/<int:material_id>")
 @require_teacher
 def delete_material(user: User, material_id: int):
