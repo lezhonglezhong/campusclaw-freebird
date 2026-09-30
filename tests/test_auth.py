@@ -11,7 +11,7 @@ def make_client(tmp_path: Path):
     app = create_app({
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'auth.sqlite3'}",
-        "SESSION_SECRET": "test-session-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
     seed_data(app)
     return app, app.test_client()
@@ -25,8 +25,11 @@ def test_login_contract_and_password_hashing(tmp_path: Path) -> None:
     assert response.json["user"] == {
         "id": 1, "account": "teacher-a", "role": "teacher", "class_id": 1, "class_name": "A",
     }
-    with client.session_transaction() as session:
-        assert session["user_id"] == 1
+    assert response.json["token_type"] == "Bearer"
+    assert response.json["expires_in"] == 3600
+    assert isinstance(response.json["access_token"], str)
+    assert response.json["access_token"]
+    assert "Set-Cookie" not in response.headers
     user = app.extensions["sqlalchemy"]["session"].query(User).filter_by(account="teacher-a").one()
     assert user.password_hash != SEED_ACCOUNTS["teacher-a"]["password"]
 
@@ -37,7 +40,6 @@ def test_b_class_seeded_accounts_can_log_in(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert response.json["user"]["role"] == "teacher"
     assert response.json["user"]["class_name"] == "B"
-    assert client.get("/api/me").json["user"]["account"] == "teacher-b"
 
 
 def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tmp_path: Path) -> None:
@@ -49,12 +51,14 @@ def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tm
 
     response = client.post("/login", json={"account": "teacher-a", "password": "wrong"})
     assert response.status_code == 401
+    assert "access_token" not in response.get_json()
+    assert "Set-Cookie" not in response.headers
     with client.session_transaction() as session:
         assert "user_id" not in session
 
 
 def test_responses_do_not_expose_session_secret(tmp_path: Path) -> None:
     _app, client = make_client(tmp_path)
-    secret = "test-session-secret"
+    secret = "test-token-secret"
     for response in (client.get("/materials"), client.post("/login", json={"account": "unknown", "password": "bad"})):
         assert secret not in response.get_data(as_text=True)

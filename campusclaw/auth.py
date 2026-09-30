@@ -97,7 +97,7 @@ def require_teacher(view):
 
 @auth_bp.post("/login")
 def login():
-    """Authenticate an account and establish its server-signed session."""
+    """Authenticate an account and return a short-lived access token."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify(error="invalid_request"), 400
@@ -111,9 +111,12 @@ def login():
     if user is None or not check_password_hash(user.password_hash, password):
         return jsonify(error="invalid_credentials"), 401
 
-    session.clear()
-    session["user_id"] = user.id
-    return jsonify(user=user_payload(user))
+    return jsonify(
+        access_token=issue_access_token(user.id),
+        token_type="Bearer",
+        expires_in=current_app.config["TOKEN_TTL_SECONDS"],
+        user=user_payload(user),
+    )
 
 
 @auth_bp.get("/api/me")
