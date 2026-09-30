@@ -28,7 +28,7 @@
 
 - [x] 4.1 Implement `POST /api/ask` Bearer authentication, validation, and history sanitization, retrieving only the latest question with the token-resolved user's current database class and ignoring client/token system/class/model overrides; verify with `python -m pytest -q tests/test_ask_api.py -k "validation or sanitization or authentication"`.
 - [x] 4.2 Implement the no-evidence short circuit so it returns `资料中未找到相关内容` with empty citations and zero chat-provider calls; verify with `python -m pytest -q tests/test_ask_api.py -k "no_evidence"`.
-- [ ] 4.3 Implement evidence-gated `course-chat` orchestration through `/chat/completions` with at most four numbered text sources, server-owned instructions, bounded history, ordered traceable citations, provider-response validation, local 20 MB enforcement, and safe 503 errors; keep `image_url` serialization available only at the provider boundary without adding image UI or image retrieval; verify with `python -m pytest -q tests/test_ask_api.py tests/test_ai_providers.py -k "grounded or citation or provider or payload or image_url"`.
+- [x] 4.3 Implement evidence-gated `course-chat` orchestration through `/chat/completions` with at most four numbered text sources, server-owned instructions, bounded history, ordered traceable citations, provider-response validation, local 20 MB enforcement, and safe 503 errors; keep `image_url` serialization available only at the provider boundary without adding image UI or image retrieval; verify with `python -m pytest -q tests/test_ask_api.py tests/test_ai_providers.py -k "grounded or citation or provider or payload or image_url"`.
 
 ## 5. Browser Workspace
 
