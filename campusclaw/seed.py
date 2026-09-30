@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash
 
 from campusclaw.models import Class, Material, User
 from campusclaw.retrieval import index_material
+from campusclaw.knowledge_indexing import ensure_material_knowledge
 
 
 SEED_ACCOUNTS = {
@@ -65,6 +66,7 @@ def seed_data(app: Flask) -> None:
             material.content_path = str(seed_path)
         session.flush()
         index_material(session, material, seed_content)
+        ensure_material_knowledge(session, material, seed_content)
     session.commit()
 
 
