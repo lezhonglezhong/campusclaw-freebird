@@ -43,7 +43,8 @@ When implementing an OpenSpec task, follow this workflow strictly:
 ## 当前项目状态
 
 - 项目已完成 Docker Compose 可复现启动、JWT Bearer 认证与角色权限、班级隔离、材料管理、浏览器页面和班级范围正文检索等已有 change。认证 token 仅由登录 JSON 返回，浏览器存于 `sessionStorage`，受保护请求必须携带 `Authorization: Bearer <access-token>`；不得恢复 Cookie 登录兼容路径。
-- 已完成的历史 change 应在 delta spec 同步到主规格并验证后归档；当前活动的 `add-traceable-vector-retrieval` 依赖 Bearer 认证 change 完成。
+- Bearer 认证与可追溯知识库 change 均已完成并归档。知识库包含自动/自定义/标题切片、MySQL 正文索引、Qdrant 向量、关键词/向量/混合检索，以及带编号来源的问答；问答只发送检索出的有限切片，不发送全库正文。
+- 新 change 应在全部任务验证通过后，将 delta spec 同步到主规格、运行 `openspec validate --specs`，再归档。部署使用私有 `.env`，不得提交 API 密钥、数据库密码、容器数据或迁移备份。
 - 对已有或新建 OpenSpec change，可在用户明确要求 Apply 后按本文件的验证、提交和自动连续执行规则实施。
 - 任何新增功能、行为变更或重要修复仍须先创建或更新相应 OpenSpec change；不得跳过规约、验证或任务顺序。
 
