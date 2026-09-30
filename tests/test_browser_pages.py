@@ -7,27 +7,25 @@ from campusclaw.seed import seed_data
 
 
 def make_app(tmp_path: Path):
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'pages.sqlite3'}", "SESSION_SECRET": "test-secret"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'pages.sqlite3'}", "TOKEN_SIGNING_SECRET": "test-token-secret"})
     seed_data(app)
     return app
 
 
-def test_login_page_is_public_and_materials_page_requires_session(tmp_path: Path) -> None:
+def test_login_page_and_data_free_materials_shell_are_public(tmp_path: Path) -> None:
     app = make_app(tmp_path)
     anonymous = app.test_client()
     login = anonymous.get("/login")
     assert login.status_code == 200
     assert b'id="login-form"' in login.data
     assert b'name="password"' in login.data
-    assert anonymous.get("/materials").status_code == 302
-
-    authenticated = app.test_client()
-    authenticated.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
-    workspace = authenticated.get("/materials")
+    workspace = anonymous.get("/materials")
     assert workspace.status_code == 200
     assert b'id="material-list"' in workspace.data
     assert b'id="material-search-form"' in workspace.data
     assert b'/static/app.css' in workspace.data
+    assert b"teacher-a" not in workspace.data
+    assert b"access_token" not in workspace.data
 
 
 def test_login_page_declares_safe_interactive_contract(tmp_path: Path) -> None:
@@ -36,6 +34,7 @@ def test_login_page_declares_safe_interactive_contract(tmp_path: Path) -> None:
     script = (Path(app.static_folder) / "login.js").read_text()
 
     assert b"/static/login.js" in page.data
+    assert b"/static/auth-client.js" in page.data
     assert 'fetch("/login"' in script
     assert 'window.location.assign("/materials")' in script
     assert "账号或密码错误。" in script
@@ -55,14 +54,14 @@ def test_login_page_uses_simplified_chinese(tmp_path: Path) -> None:
     assert "暂时无法登录，请稍后重试。" in script
 
 
-def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: Path) -> None:
+def test_material_workspace_declares_token_list_and_detail_contract(tmp_path: Path) -> None:
     app = make_app(tmp_path)
-    workspace = app.test_client()
-    workspace.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
-    page = workspace.get("/materials")
+    page = app.test_client().get("/materials")
     script = (Path(app.static_folder) / "materials.js").read_text()
 
     assert b"/static/materials.js" in page.data
+    assert b"/static/auth-client.js" in page.data
+    assert "const request = auth.request;" in script
     assert 'request("/api/me")' in script
     assert 'request("/api/materials")' in script
     assert 'new URLSearchParams({ q: query })' in script
@@ -76,10 +75,7 @@ def test_material_workspace_declares_session_list_and_detail_contract(tmp_path: 
 def test_workspace_declares_teacher_upload_and_student_read_only_contract(tmp_path: Path) -> None:
     app = make_app(tmp_path)
     script = (Path(app.static_folder) / "materials.js").read_text()
-    teacher = app.test_client()
-    teacher.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
-    student = app.test_client()
-    student.post("/login", json={"account": "student-a", "password": "student-a-password"})
+    shell = app.test_client().get("/materials")
 
     assert 'if (user.role !== "teacher") return;' in script
     assert 'request("/api/materials", {' in script
@@ -90,14 +86,12 @@ def test_workspace_declares_teacher_upload_and_student_read_only_contract(tmp_pa
     assert "材料上传成功。" in script
     assert "删除材料" in script and "下载材料" in script
     assert "你没有上传材料的权限。" in script
-    assert b'id="upload-form"' not in student.get("/materials").data
-    assert b'id="upload-form"' not in teacher.get("/materials").data
+    assert b'id="upload-form"' not in shell.data
 
 
 def test_material_workspace_uses_simplified_chinese(tmp_path: Path) -> None:
     app = make_app(tmp_path)
     client = app.test_client()
-    client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
     page = client.get("/materials").get_data(as_text=True)
     script = (Path(app.static_folder) / "materials.js").read_text()
 
