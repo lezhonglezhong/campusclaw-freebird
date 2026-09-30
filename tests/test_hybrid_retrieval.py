@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from campusclaw import create_app
 from campusclaw.models import KnowledgeChunk
 from campusclaw.seed import seed_data
@@ -37,6 +39,7 @@ def test_hybrid_default_fuses_ranks_and_omits_weak_points(tmp_path: Path):
     assert hits[0]["chunk_id"] == own[0].id
     assert hits[0]["keyword_rank"] == 1
     assert hits[0]["vector_rank"] == 2
+    assert hits[0]["rrf_score"] == pytest.approx(1 / 61 + 1 / 62)
     assert hits[0]["rrf_score"] > hits[1]["rrf_score"]
     assert len(hits[0]["excerpt"]) <= 240
 

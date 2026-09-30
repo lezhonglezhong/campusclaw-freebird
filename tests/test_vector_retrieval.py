@@ -45,9 +45,9 @@ def test_vector_cutoff_and_db_class_recheck(tmp_path):
     foreign = session.query(KnowledgeChunk).filter_by(class_id=2).one()
     store = Store([
         {"id": foreign.id, "score": 0.99, "payload": {"text": "foreign secret"}},
-        {"id": own.id, "score": 0.8},
+        {"id": own.id, "score": 0.35},
         {"id": 99999, "score": 0.9},
-        {"id": own.id, "score": 0.2},
+        {"id": own.id, "score": 0.349},
     ])
     app.extensions["vector_store"] = store
     client = app.test_client()
@@ -55,7 +55,7 @@ def test_vector_cutoff_and_db_class_recheck(tmp_path):
     assert response.status_code == 200
     assert store.filters == [1]
     assert [hit["chunk_id"] for hit in response.json["hits"]] == [own.id]
-    assert response.json["hits"][0]["vector_score"] == 0.8
+    assert response.json["hits"][0]["vector_score"] == 0.35
     assert "foreign secret" not in response.get_data(as_text=True)
 
 
