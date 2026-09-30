@@ -43,4 +43,4 @@
 ## 7. Acceptance
 
 - [x] 7.1 Run the complete automated suite and fix regressions across authentication, role checks, class isolation, upload/download/delete, legacy retrieval, new indexing/retrieval/ask APIs, and browser behavior; verify with `python -m pytest -q`.
-- [ ] 7.2 Validate the OpenSpec change strictly and verify the final Compose model after all documentation and configuration updates; verify with `openspec validate add-traceable-vector-retrieval --strict && docker compose config --quiet`.
+- [x] 7.2 Validate the OpenSpec change strictly and verify the final Compose model after all documentation and configuration updates; verify with `openspec validate add-traceable-vector-retrieval --strict && docker compose config --quiet`.
