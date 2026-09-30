@@ -20,6 +20,7 @@ h1 { margin: .25rem 0; } h2 { font-size: 1.1rem; margin-top: 2rem; } .muted { co
 .material-list { display: grid; gap: .55rem; list-style: none; padding: 0; }
 .material-list button { background: #edf1f7; color: #172033; text-align: left; width: 100%; }
 .detail { background: #f7f9fc; border-radius: .5rem; padding: 1rem; }
+#material-content-preview { background: #fff; border: 1px solid #dce4ef; border-radius: .45rem; max-height: 24rem; overflow: auto; overflow-wrap: anywhere; padding: 1rem; white-space: pre-wrap; }
 .result-list, .citation-list { display: grid; gap: .75rem; list-style: none; padding: 0; }
 .result-card, .citation-card, .answer-card { background: #f7f9fc; border: 1px solid #dce4ef; border-radius: .55rem; padding: .9rem; overflow-wrap: anywhere; }
 .result-card p, .citation-card p { margin: .4rem 0; }

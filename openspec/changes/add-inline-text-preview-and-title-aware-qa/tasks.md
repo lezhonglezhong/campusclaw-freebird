@@ -3,7 +3,7 @@
 ## 1. Inline Source Preview
 
 - [x] 1.1 Add a Bearer-authenticated, database-class-scoped source-text endpoint for typed and file-uploaded materials, with indistinguishable missing/foreign responses and no path leakage; verify with `python -m pytest -q tests/test_material_preview.py tests/test_material_access.py tests/test_material_download.py`.
-- [ ] 1.2 Render a plain-text preview in the detail panel, clear stale previews, keep authenticated downloads, and open a newly uploaded material automatically; verify with `python -m pytest -q tests/test_browser_preview.py tests/test_browser_flow.py tests/test_browser_token_auth.py`.
+- [x] 1.2 Render a plain-text preview in the detail panel, clear stale previews, keep authenticated downloads, and open a newly uploaded material automatically; verify with `python -m pytest -q tests/test_browser_preview.py tests/test_browser_flow.py tests/test_browser_token_auth.py`.
 
 ## 2. Title-Directed Evidence
 

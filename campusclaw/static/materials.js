@@ -4,6 +4,8 @@ const list = document.querySelector("#material-list");
 const detail = document.querySelector("#material-detail");
 const detailFields = document.querySelector("#material-detail-fields");
 const detailActions = document.querySelector("#material-actions");
+const previewStatus = document.querySelector("#material-preview-status");
+const contentPreview = document.querySelector("#material-content-preview");
 const teacherUpload = document.querySelector("#teacher-upload");
 const searchForm = document.querySelector("#material-search-form");
 const retrievalForm = document.querySelector("#content-retrieval-form");
@@ -20,6 +22,7 @@ const request = auth.request;
 let currentUser;
 let retrievalRequestId = 0;
 let askRequestId = 0;
+let detailRequestId = 0;
 
 function roleLabel(role) {
   return { teacher: "教师", student: "学生" }[role] || role;
@@ -30,6 +33,7 @@ function materialStatusLabel(value) {
 }
 
 function clearProtectedView() {
+  detailRequestId += 1;
   retrievalRequestId += 1;
   askRequestId += 1;
   currentUser = undefined;
@@ -37,6 +41,9 @@ function clearProtectedView() {
   list.replaceChildren();
   detailFields.replaceChildren();
   detailActions.replaceChildren();
+  previewStatus.textContent = "";
+  contentPreview.textContent = "";
+  contentPreview.hidden = true;
   retrievalResults.replaceChildren();
   retrievalStatus.textContent = "";
   askStatus.textContent = "";
@@ -123,6 +130,10 @@ function showDetail(material) {
       try {
         const response = await request(`/api/materials/${material.id}`, { method: "DELETE" });
         if (response.status === 204) {
+          detailRequestId += 1;
+          contentPreview.textContent = "";
+          contentPreview.hidden = true;
+          previewStatus.textContent = "";
           detail.hidden = true;
           await loadMaterials();
           status.textContent = "材料已删除。";
@@ -143,19 +154,44 @@ function showDetail(material) {
 }
 
 async function loadDetail(id) {
+  const requestId = ++detailRequestId;
   status.textContent = "正在加载材料…";
   detail.hidden = true;
+  contentPreview.textContent = "";
+  contentPreview.hidden = true;
+  previewStatus.textContent = "";
   try {
     const response = await request(`/api/materials/${id}`);
+    if (requestId !== detailRequestId) return;
     if (response.status === 404) {
       status.textContent = "该材料已不存在或无权访问。";
       return;
     }
     if (!response.ok) throw new Error("detail_failed");
-    showDetail((await response.json()).material);
+    const { material } = await response.json();
+    if (requestId !== detailRequestId) return;
+    showDetail(material);
     status.textContent = "";
+    previewStatus.textContent = "正在加载正文…";
+    const contentResponse = await request(`/api/materials/${id}/content`);
+    if (requestId !== detailRequestId) return;
+    if (contentResponse.status === 404) {
+      previewStatus.textContent = "正文不可用或无权访问。";
+      return;
+    }
+    if (!contentResponse.ok) throw new Error("preview_failed");
+    const { content } = await contentResponse.json();
+    if (requestId !== detailRequestId) return;
+    contentPreview.textContent = content;
+    contentPreview.hidden = false;
+    previewStatus.textContent = "";
   } catch (error) {
-    if (error.message !== "unauthorized") status.textContent = "无法加载材料详情，请稍后重试。";
+    if (error.message !== "unauthorized" && requestId === detailRequestId) {
+      previewStatus.textContent = "";
+      contentPreview.textContent = "";
+      contentPreview.hidden = true;
+      status.textContent = "无法加载材料正文，请稍后重试。";
+    }
   }
 }
 
@@ -284,9 +320,11 @@ function renderTeacherUpload(user) {
         body: JSON.stringify({ display_name: displayName, content }),
       });
       if (response.status === 201) {
+        const { material } = await response.json();
         textForm.reset();
         await loadMaterials();
-        status.textContent = "材料上传成功。";
+        await loadDetail(material.id);
+        if (!status.textContent) status.textContent = "材料上传成功。";
       } else if (response.status === 403) {
         status.textContent = "你没有上传材料的权限。";
       } else {
@@ -316,9 +354,11 @@ function renderTeacherUpload(user) {
       formData.append("file", file);
       const response = await request("/api/materials", { method: "POST", body: formData });
       if (response.status === 201) {
+        const { material } = await response.json();
         fileForm.reset();
         await loadMaterials();
-        status.textContent = "材料上传成功。";
+        await loadDetail(material.id);
+        if (!status.textContent) status.textContent = "材料上传成功。";
       } else if (response.status === 403) {
         status.textContent = "你没有上传材料的权限。";
       } else {
