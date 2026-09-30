@@ -20,7 +20,7 @@
 
 ## 3. Browser token lifecycle
 
-- [ ] 3.1 Add a shared browser authentication client that owns the access token in `sessionStorage`, attaches `Authorization: Bearer <access-token>` to protected JSON, multipart, and blob requests, and clears the token plus redirects to login on `401`.
+- [x] 3.1 Add a shared browser authentication client that owns the access token in `sessionStorage`, attaches `Authorization: Bearer <access-token>` to protected JSON, multipart, and blob requests, and clears the token plus redirects to login on `401`.
   - Verification: `pytest -q tests/test_browser_token_auth.py -k "storage or authorization or unauthorized"`
 - [ ] 3.2 Update the login page to store only the returned access token in `sessionStorage`, handle invalid credentials without navigation, and enter the material workspace after successful authentication.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_browser_flow.py -k "login"`
