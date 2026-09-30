@@ -33,7 +33,7 @@ _QUESTION_STOP_WORDS = {
 }
 _BRACKET_PATTERN = re.compile(r"\[([^\]]*)\]")
 _NUMBER_PATTERN = re.compile(r"(?<!\d)(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?%?(?!\d)")
-_CLAIM_SPLIT_PATTERN = re.compile(r"[。！？；\n，、,;!?]+")
+_CLAIM_SPLIT_PATTERN = re.compile(r"[。！？；\n，、,;!?]+(?!\s*\[\d+\])")
 
 
 def parse_ask_payload(payload: object) -> tuple[str, list[dict[str, str]]]:

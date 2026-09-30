@@ -12,4 +12,4 @@
 
 ## 3. Documentation and Full Acceptance
 
-- [ ] 3.1 Update README with answer-evidence selection, cited-source projection, and numeric citation rejection behavior, then run the complete regression and project validation; verify with `python -m pytest -q && openspec validate answer-citation-evidence-selection --strict && openspec validate --specs && docker compose config --quiet`.
+- [x] 3.1 Update README with answer-evidence selection, cited-source projection, and numeric citation rejection behavior, then run the complete regression and project validation; verify with `python -m pytest -q && openspec validate answer-citation-evidence-selection --strict && openspec validate --specs && docker compose config --quiet`.

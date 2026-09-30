@@ -62,6 +62,16 @@ def test_numeric_claim_requires_support_from_its_own_citation(monkeypatch):
     assert invalid is None
 
 
+def test_citation_after_sentence_punctuation_supports_preceding_number(monkeypatch):
+    monkeypatch.setattr("campusclaw.knowledge_api.public_hit", public_source)
+    chosen = [candidate(1, "123456", "A班资料")]
+
+    result = validated_answer_response(None, "A班资料的内容是 123456。[1]", chosen)
+
+    assert result is not None
+    assert result["answer"] == "A班资料的内容是 123456。[1]"
+
+
 def make_app(tmp_path: Path):
     app = create_app({
         "TESTING": True,
