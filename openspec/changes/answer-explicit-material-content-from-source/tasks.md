@@ -6,5 +6,5 @@
 
 ## 2. Acceptance and Delivery
 
-- [ ] 2.1 Document the distinction between asking for a material's own text and asking for a concept explanation; verify with `python -m pytest -q && openspec validate answer-explicit-material-content-from-source --strict && docker compose config --quiet`.
+- [x] 2.1 Document the distinction between asking for a material's own text and asking for a concept explanation; verify with `python -m pytest -q && openspec validate answer-explicit-material-content-from-source --strict && docker compose config --quiet`.
 - [ ] 2.2 Rebuild GPU3 and read-only verify material 13 answers the user's exact question with its original text and citation while concept inference remains unsupported; verify with `docker compose up -d --build --wait campusclaw && docker compose ps` plus HTTP checks.
