@@ -13,7 +13,9 @@ CampusClaw 是“互联网软件技术开发与实践”课程的三人小组学
 
 ```bash
 cd campusclaw-freebird
-SESSION_SECRET='your-secret' docker compose up --build -d --wait
+cp .env.example .env
+# 编辑 .env，为 TOKEN_SIGNING_SECRET 设置不可提交的随机值。
+docker compose up --build -d --wait
 docker compose exec campusclaw python -m flask --app campusclaw seed
 ```
 
@@ -21,6 +23,26 @@ docker compose exec campusclaw python -m flask --app campusclaw seed
 
 使用 `docker compose ps` 可确认服务状态为 `healthy`；健康检查地址为
 `/health`。后续启动若本地镜像仍在，可使用 `docker compose up -d`。
+
+## Token 登录与接口调用
+
+`POST /login` 成功后返回短期 JWT access token。系统不设置或接受登录
+Cookie；浏览器只把 token 保存在当前标签页的 `sessionStorage` 中。除登录、
+健康检查和页面外壳外，所有受保护接口都必须显式携带 Bearer header：
+
+```bash
+curl -s http://localhost:8000/login \
+  -H 'Content-Type: application/json' \
+  -d '{"account":"teacher-a","password":"teacher-a-password"}'
+
+curl -s http://localhost:8000/api/me \
+  -H 'Authorization: Bearer <access_token>'
+```
+
+`TOKEN_SIGNING_SECRET` 是必填的服务端密钥，不得提交到 Git、返回给浏览器或
+写入日志。`TOKEN_TTL_SECONDS` 默认为 `3600`，允许范围为 1 至 86400 秒。
+退出登录会清除浏览器 `sessionStorage`；当前实现没有服务端 token 吊销列表，
+已经复制的 token 会在到期前保持有效。
 
 
 ## 本地测试账号
@@ -34,6 +56,8 @@ docker compose exec campusclaw python -m flask --app campusclaw seed
 
 ## 验收要点
 
+- 登录返回 JWT，受保护请求使用 `Authorization: Bearer <access_token>`，旧
+  Cookie 不能获得授权。
 - 教师可上传 `.txt` 或 `.md` 材料，也可直接输入文字；学生只读。
 - 材料列表、正文检索和下载均按登录用户所属班级隔离。
 - 正文检索结果显示材料来源、班级、上传者和匹配片段；中文关键词可检索。

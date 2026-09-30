@@ -33,9 +33,12 @@ def test_invalid_token_ttl_fails_startup(tmp_path: Path, ttl: object) -> None:
         })
 
 
-def test_compose_and_example_contain_no_real_secret() -> None:
+def test_token_compose_and_example_contain_no_real_secret() -> None:
     root = Path(__file__).parents[1]
     compose = (root / "compose.yaml").read_text()
     example = (root / ".env.example").read_text()
-    assert "SESSION_SECRET" in compose and "SESSION_SECRET" in example
-    assert "test-session-secret" not in compose + example
+    combined = compose + example
+    assert "TOKEN_SIGNING_SECRET" in compose and "TOKEN_SIGNING_SECRET" in example
+    assert "TOKEN_TTL_SECONDS" in compose and "TOKEN_TTL_SECONDS" in example
+    assert "SESSION_SECRET" not in combined
+    assert "test-token-secret" not in combined

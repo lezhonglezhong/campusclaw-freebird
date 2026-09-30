@@ -31,7 +31,7 @@
 
 ## 4. Operations and documentation
 
-- [ ] 4.1 Update example environment, deployment configuration, and README instructions for `TOKEN_SIGNING_SECRET` and `TOKEN_TTL_SECONDS`, removing `SESSION_SECRET` as an authentication requirement.
+- [x] 4.1 Update example environment, deployment configuration, and README instructions for `TOKEN_SIGNING_SECRET` and `TOKEN_TTL_SECONDS`, removing `SESSION_SECRET` as an authentication requirement.
   - Verification: `pytest -q tests/test_config.py -k "token"`
 
 ## 5. Acceptance
