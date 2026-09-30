@@ -51,6 +51,22 @@ def test_ask_retrieves_only_latest_question_for_database_class(tmp_path, monkeyp
                         observed.append((question, class_id, limit)) or [])
     response = client.post("/api/ask", json={"question": "new", "class_id": 2,
         "history": [{"role": "user", "content": "old"}]}, headers=headers)
-    assert response.status_code == 503
+    assert response.status_code == 200
     assert observed == [("new", 1, 4)]
+
+
+def test_no_evidence_never_calls_chat_provider(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    headers = login(client)
+    monkeypatch.setattr("campusclaw.knowledge_api.hybrid_retrieve", lambda *args, **kwargs: [])
+
+    class NoChat:
+        def answer(self, *args, **kwargs):
+            raise AssertionError("chat provider must not run without evidence")
+
+    app.extensions["chat_provider"] = NoChat()
+    response = client.post("/api/ask", json={"question": "unrelated"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json == {"answer": "资料中未找到相关内容", "citations": []}
 

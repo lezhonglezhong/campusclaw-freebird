@@ -51,6 +51,8 @@ def ask_knowledge(user: User):
         )
     except ProviderUnavailable:
         return jsonify(error="vector_unavailable"), 503
+    if not hits:
+        return jsonify(answer="资料中未找到相关内容", citations=[])
     return jsonify(error="answer_unavailable"), 503
 
 
