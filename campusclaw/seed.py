@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 
 from campusclaw.models import Class, Material, User
 from campusclaw.retrieval import index_material
-from campusclaw.knowledge_indexing import ensure_material_knowledge
+from campusclaw.knowledge_indexing import ensure_material_knowledge, refresh_keyword_index
 from campusclaw.knowledge_indexing import vectorize_entry
 from campusclaw.models import KnowledgeEntry
 
@@ -69,6 +69,7 @@ def seed_data(app: Flask) -> None:
         session.flush()
         index_material(session, material, seed_content)
         entry = ensure_material_knowledge(session, material, seed_content)
+        refresh_keyword_index(session, entry)
         if entry.vector_status == "pending":
             vectorize_entry(session, entry, app.extensions["embedding_provider"], app.extensions["vector_store"])
     session.commit()
@@ -88,6 +89,7 @@ def backfill_knowledge(app: Flask) -> int:
         if not body:
             continue
         entry = ensure_material_knowledge(session, material, body)
+        refresh_keyword_index(session, entry)
         vectorize_entry(session, entry, app.extensions["embedding_provider"], app.extensions["vector_store"])
         count += 1
     session.commit()

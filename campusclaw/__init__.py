@@ -9,6 +9,7 @@ from flask import Flask, jsonify
 from campusclaw.auth import auth_bp
 from campusclaw.ai_providers import OpenAIChatProvider, OpenAIEmbeddingProvider
 from campusclaw.db import init_db
+from campusclaw.knowledge_api import knowledge_bp
 from campusclaw.materials import materials_bp
 from campusclaw.runtime_config import ConfigurationError, load_gateway_settings
 from campusclaw.vector_store import QdrantVectorStore
@@ -72,6 +73,7 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     register_seed_command(app)
     app.register_blueprint(auth_bp)
     app.register_blueprint(materials_bp)
+    app.register_blueprint(knowledge_bp)
 
     @app.get("/health")
     def health_check():

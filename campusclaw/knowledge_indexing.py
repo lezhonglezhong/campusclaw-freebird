@@ -2,6 +2,7 @@
 
 import json
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from campusclaw.ai_providers import EmbeddingProvider, ProviderUnavailable
@@ -41,6 +42,26 @@ def replace_material_chunks(
             text_status="ready", vector_status="pending",
         ))
     session.flush()
+
+
+def refresh_keyword_index(session: Session, entry: KnowledgeEntry, old_ids: list[int] | None = None) -> None:
+    """Keep SQLite FTS rows in step with relational chunks; MySQL indexes the table."""
+    if session.get_bind().dialect.name != "sqlite":
+        return
+    for chunk_id in old_ids or []:
+        session.execute(text("DELETE FROM knowledge_chunk_retrieval WHERE chunk_id = :id"), {"id": chunk_id})
+    for chunk in entry.chunks:
+        session.execute(text("DELETE FROM knowledge_chunk_retrieval WHERE chunk_id = :id"), {"id": chunk.id})
+        session.execute(text(
+            "INSERT INTO knowledge_chunk_retrieval(chunk_id, class_id, chunk_text) "
+            "VALUES (:id, :class_id, :body)"
+        ), {"id": chunk.id, "class_id": chunk.class_id, "body": chunk.chunk_text})
+
+
+def remove_keyword_index(session: Session, chunk_ids: list[int]) -> None:
+    if session.get_bind().dialect.name == "sqlite":
+        for chunk_id in chunk_ids:
+            session.execute(text("DELETE FROM knowledge_chunk_retrieval WHERE chunk_id = :id"), {"id": chunk_id})
 
 
 def vectorize_entry(

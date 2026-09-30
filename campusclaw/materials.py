@@ -11,8 +11,10 @@ from werkzeug.utils import secure_filename
 
 from campusclaw.auth import require_authenticated_api, require_teacher
 from campusclaw.models import Material, User
-from campusclaw.knowledge_indexing import ensure_material_knowledge, vectorize_entry
-from campusclaw.knowledge_indexing import replace_material_chunks
+from campusclaw.knowledge_indexing import (
+    ensure_material_knowledge, refresh_keyword_index, remove_keyword_index,
+    replace_material_chunks, vectorize_entry,
+)
 from campusclaw.chunking import ChunkingError, chunk_text
 from campusclaw.models import KnowledgeEntry
 from campusclaw.ai_providers import ProviderUnavailable
@@ -49,11 +51,13 @@ def reindex_material(user: User, material_id: int):
     if entry is None:
         entry = ensure_material_knowledge(db_session, material, body)
     old_ids = [chunk.id for chunk in entry.chunks if chunk.vector_status == "ready"]
+    old_chunk_ids = [chunk.id for chunk in entry.chunks]
     store = current_app.extensions["vector_store"]
     try:
         if old_ids:
             store.delete(old_ids)
         replace_material_chunks(db_session, entry, planned_chunks, strategy, options)
+        refresh_keyword_index(db_session, entry, old_chunk_ids)
         vectorize_entry(db_session, entry, current_app.extensions["embedding_provider"], store)
         db_session.commit()
     except Exception:
@@ -167,6 +171,8 @@ def delete_material(user: User, material_id: int):
         ] if material.knowledge_entry is not None else []
         if ready_ids:
             current_app.extensions["vector_store"].delete(ready_ids)
+        all_chunk_ids = [chunk.id for chunk in material.knowledge_entry.chunks] if material.knowledge_entry else []
+        remove_keyword_index(db_session, all_chunk_ids)
         if content_path.is_file():
             staged_path = content_path.with_name(f".{content_path.name}.{uuid4().hex}.deleting")
             os.replace(content_path, staged_path)
@@ -246,6 +252,7 @@ def upload_material(user: User):
         db_session.flush()
         index_material(db_session, material, content)
         entry = ensure_material_knowledge(db_session, material, content)
+        refresh_keyword_index(db_session, entry)
         vectorize_entry(
             db_session, entry, current_app.extensions["embedding_provider"],
             current_app.extensions["vector_store"],
