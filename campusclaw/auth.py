@@ -1,7 +1,10 @@
 """Authentication endpoints and helpers."""
 
+from datetime import datetime, timedelta, timezone
 from functools import wraps
+from uuid import uuid4
 
+import jwt
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import check_password_hash
 
@@ -9,6 +12,46 @@ from campusclaw.models import User
 
 
 auth_bp = Blueprint("auth", __name__)
+
+
+class TokenAuthenticationError(ValueError):
+    """Represent any access-token failure without exposing its cause."""
+
+
+def issue_access_token(user_id: int) -> str:
+    """Issue a short-lived HS256 token containing identity-only claims."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "jti": str(uuid4()),
+        "sub": str(user_id),
+        "iat": now,
+        "exp": now + timedelta(seconds=current_app.config["TOKEN_TTL_SECONDS"]),
+    }
+    return jwt.encode(
+        payload,
+        current_app.config["TOKEN_SIGNING_SECRET"],
+        algorithm="HS256",
+    )
+
+
+def decode_access_token(token: str) -> int:
+    """Verify an access token and return its integer user identifier."""
+    try:
+        payload = jwt.decode(
+            token,
+            current_app.config["TOKEN_SIGNING_SECRET"],
+            algorithms=["HS256"],
+            options={"require": ["jti", "sub", "iat", "exp"]},
+        )
+        subject = payload["sub"]
+        if not isinstance(subject, str) or not subject.isdecimal():
+            raise TokenAuthenticationError
+        user_id = int(subject)
+        if user_id <= 0:
+            raise TokenAuthenticationError
+        return user_id
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError) as exc:
+        raise TokenAuthenticationError from exc
 
 
 def user_payload(user: User) -> dict[str, int | str]:

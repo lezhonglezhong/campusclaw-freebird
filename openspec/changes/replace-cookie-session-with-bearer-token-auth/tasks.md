@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add the JWT runtime dependency and validate `TOKEN_SIGNING_SECRET` plus a positive, bounded `TOKEN_TTL_SECONDS` (default `3600`) during application startup.
   - Verification: `pytest -q tests/test_config.py tests/test_token_auth.py -k "configuration or ttl"`
-- [ ] 1.2 Implement access-token issue and verification helpers using HS256 with only `jti`, `sub`, `iat`, and `exp` claims, mapping malformed, expired, or incorrectly signed tokens to stable authentication failures.
+- [x] 1.2 Implement access-token issue and verification helpers using HS256 with only `jti`, `sub`, `iat`, and `exp` claims, mapping malformed, expired, or incorrectly signed tokens to stable authentication failures.
   - Verification: `pytest -q tests/test_token_auth.py -k "claims or expired or malformed or signature"`
 
 ## 2. Backend authentication migration
