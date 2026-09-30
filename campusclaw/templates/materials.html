@@ -17,7 +17,8 @@
         <button id="logout-button" type="button">退出登录</button>
       </header>
       <p id="workspace-status" class="status" role="status" aria-live="polite"></p>
-      <section aria-labelledby="material-list-title">
+      <div class="workspace-grid">
+      <section class="panel" aria-labelledby="material-list-title">
         <h2 id="material-list-title">材料列表</h2>
         <form id="material-search-form" role="search">
           <label for="material-search">按材料名称搜索</label>
@@ -26,21 +27,74 @@
         </form>
         <ul id="material-list" class="material-list"></ul>
       </section>
-      <section aria-labelledby="content-retrieval-title">
-        <h2 id="content-retrieval-title">正文检索</h2>
+      <section class="panel" aria-labelledby="content-retrieval-title">
+        <h2 id="content-retrieval-title">知识库检索</h2>
+        <p class="muted">只检索当前班级，结果标出材料与切片来源。</p>
         <form id="content-retrieval-form" role="search">
           <label for="content-retrieval-query">搜索材料正文</label>
           <input id="content-retrieval-query" name="q" type="search" required>
+          <label for="retrieval-mode">检索方式</label>
+          <select id="retrieval-mode" name="mode">
+            <option value="hybrid" selected>混合检索</option>
+            <option value="keyword">关键词检索</option>
+            <option value="vector">语义检索</option>
+          </select>
           <button type="submit">检索</button>
         </form>
-        <ul id="content-retrieval-results" class="material-list"></ul>
+        <p id="retrieval-status" class="status" role="status" aria-live="polite"></p>
+        <ul id="content-retrieval-results" class="result-list" aria-live="polite"></ul>
       </section>
-      <section id="material-detail" class="detail" hidden aria-labelledby="material-detail-title">
+      <section class="panel" aria-labelledby="ask-title">
+        <h2 id="ask-title">根据资料提问</h2>
+        <p class="muted">只会引用检索命中的相关切片。</p>
+        <form id="ask-form">
+          <label for="ask-question">你的问题</label>
+          <textarea id="ask-question" name="question" rows="3" required></textarea>
+          <button type="submit">查找答案</button>
+        </form>
+        <p id="ask-status" class="status" role="status" aria-live="polite"></p>
+        <div id="ask-answer" class="answer-card" hidden></div>
+        <ol id="ask-citations" class="citation-list" aria-label="答案来源"></ol>
+      </section>
+      <section id="material-detail" class="panel detail" hidden aria-labelledby="material-detail-title">
         <h2 id="material-detail-title">材料详情</h2>
         <dl id="material-detail-fields"></dl>
         <p id="material-actions"></p>
       </section>
-      <section id="teacher-upload" hidden></section>
+      <section id="teacher-upload" class="panel" hidden aria-labelledby="upload-title"></section>
+      <section id="teacher-indexing" class="panel" hidden aria-labelledby="indexing-title">
+      </section>
+      <template id="teacher-indexing-template">
+        <h2 id="indexing-title">重建材料索引</h2>
+        <form id="reindex-form">
+          <label for="reindex-material">材料</label>
+          <select id="reindex-material" name="material_id" required></select>
+          <label for="reindex-strategy">切片方式</label>
+          <select id="reindex-strategy" name="strategy">
+            <option value="auto">自动：800 字，重叠 80 字</option>
+            <option value="custom">自定义</option>
+            <option value="hierarchy">按 Markdown 标题</option>
+          </select>
+          <div id="custom-chunk-options" hidden>
+            <label for="chunk-max-length">最大字符数（100–2000）</label>
+            <input id="chunk-max-length" name="max_length" type="number" min="100" max="2000" value="800">
+            <label for="chunk-overlap">重叠比例（0–50%）</label>
+            <input id="chunk-overlap" name="overlap_percent" type="number" min="0" max="50" value="10">
+            <label for="chunk-separator">优先分隔符</label>
+            <select id="chunk-separator" name="separator">
+              <option value="sentence">句号</option>
+              <option value="newline">换行</option>
+              <option value="blank_line">空行</option>
+            </select>
+            <label class="checkbox"><input name="remove_urls" type="checkbox"> 移除网址</label>
+            <label class="checkbox"><input name="remove_emails" type="checkbox"> 移除邮箱地址</label>
+            <label class="checkbox"><input name="collapse_whitespace" type="checkbox"> 合并空白</label>
+          </div>
+          <button type="submit">重建索引</button>
+        </form>
+        <p id="reindex-status" class="status" role="status" aria-live="polite"></p>
+      </template>
+      </div>
     </main>
     <script src="{{ url_for('static', filename='auth-client.js') }}" defer></script>
     <script src="{{ url_for('static', filename='materials.js') }}" defer></script>
