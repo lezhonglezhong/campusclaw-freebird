@@ -16,6 +16,8 @@ def initialize_retrieval_index(session: Session) -> None:
 
 
 def index_material(session: Session, material: Material, content: str) -> None:
+    if session.get_bind().dialect.name != "sqlite":
+        return
     session.execute(text("DELETE FROM material_retrieval WHERE material_id = :material_id"), {"material_id": material.id})
     session.execute(
         text("INSERT INTO material_retrieval(material_id, class_id, content) VALUES (:material_id, :class_id, :content)"),
@@ -24,4 +26,6 @@ def index_material(session: Session, material: Material, content: str) -> None:
 
 
 def remove_material_from_index(session: Session, material_id: int) -> None:
+    if session.get_bind().dialect.name != "sqlite":
+        return
     session.execute(text("DELETE FROM material_retrieval WHERE material_id = :material_id"), {"material_id": material_id})
