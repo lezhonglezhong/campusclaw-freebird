@@ -13,4 +13,4 @@
 ## 3. Acceptance and Deployment
 
 - [x] 3.1 Update README for preview and title-aware questions, run the full suite, strict OpenSpec validation, and Compose configuration check; verify with `python -m pytest -q && openspec validate add-inline-text-preview-and-title-aware-qa --strict && docker compose config --quiet`.
-- [ ] 3.2 Rebuild the GPU3 service and read-only check the existing short material's protected preview, title-directed retrieval, and cited answer; verify with `docker compose up -d --build --wait campusclaw && docker compose ps` plus HTTP 200 checks for preview, retrieval, and ask.
+- [x] 3.2 Rebuild the GPU3 service and read-only check the existing short material's protected preview, title-directed retrieval, and cited answer; verify with `docker compose up -d --build --wait campusclaw && docker compose ps` plus HTTP 200 checks for preview, retrieval, and ask.
