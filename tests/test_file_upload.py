@@ -13,12 +13,14 @@ def app_and_client(tmp_path: Path, account: str = "teacher-a"):
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'file-upload.sqlite3'}",
         "MATERIAL_STORAGE_DIR": str(tmp_path / "content"),
-        "SESSION_SECRET": "test-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
     seed_data(app)
     client = app.test_client()
     password = "teacher-a-password" if account == "teacher-a" else "student-a-password"
-    assert client.post("/login", json={"account": account, "password": password}).status_code == 200
+    login = client.post("/login", json={"account": account, "password": password})
+    assert login.status_code == 200
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {login.json['access_token']}"
     return app, client
 
 

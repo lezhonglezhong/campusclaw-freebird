@@ -40,6 +40,9 @@ def test_b_class_seeded_accounts_can_log_in(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert response.json["user"]["role"] == "teacher"
     assert response.json["user"]["class_name"] == "B"
+    me = client.get("/api/me", headers={"Authorization": f"Bearer {response.json['access_token']}"})
+    assert me.status_code == 200
+    assert me.json["user"]["account"] == "teacher-b"
 
 
 def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tmp_path: Path) -> None:

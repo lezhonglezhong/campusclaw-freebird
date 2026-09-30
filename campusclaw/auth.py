@@ -143,11 +143,9 @@ def login():
 
 
 @auth_bp.get("/api/me")
-def current_user():
+@require_authenticated_api
+def current_user(user: User):
     """Return the server-validated identity used by browser page initialization."""
-    user = session_user()
-    if user is None:
-        return jsonify(error="unauthorized"), 401
     return jsonify(user=user_payload(user))
 
 
