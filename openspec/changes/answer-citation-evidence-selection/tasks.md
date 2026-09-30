@@ -7,7 +7,7 @@
 
 ## 2. Retrieval and Browser Boundaries
 
-- [ ] 2.1 Confirm the browser renders answer citations only from the ask response while keeping the independent retrieval list separate; verify with `python -m pytest -q tests/test_browser_ask.py tests/test_browser_retrieval.py tests/test_browser_knowledge_ui.py`.
+- [x] 2.1 Confirm the browser renders answer citations only from the ask response while keeping the independent retrieval list separate; verify with `python -m pytest -q tests/test_browser_ask.py tests/test_browser_retrieval.py tests/test_browser_knowledge_ui.py`.
 - [ ] 2.2 Add or retain characterization coverage showing weak vector candidates are omitted, hybrid RRF ordering is unchanged, and class isolation is preserved without changing the 0.35 cutoff or RRF formula; verify with `python -m pytest -q tests/test_vector_retrieval.py tests/test_hybrid_retrieval.py tests/test_retrieval_security.py tests/test_material_retrieval_security.py`.
 
 ## 3. Documentation and Full Acceptance

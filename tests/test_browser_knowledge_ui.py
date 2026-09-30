@@ -15,6 +15,7 @@ def test_workspace_shell_has_retrieval_answer_and_teacher_panels(tmp_path: Path)
     assert 'aria-live="polite"' in page
     assert '<template id="teacher-indexing-template">' in page
     assert 'id="reindex-form"' in page
+    assert '答案来源只显示答案实际引用的相关切片' in page
     assert "EMBEDDING_API_KEY" not in page
     assert "TOKEN_SIGNING_SECRET" not in page
 
