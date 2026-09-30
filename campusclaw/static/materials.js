@@ -34,6 +34,37 @@ function clearProtectedView() {
 
 window.addEventListener("campusclaw:unauthorized", clearProtectedView);
 
+function downloadFilename(response, fallbackName) {
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1]);
+    } catch {
+      return fallbackName;
+    }
+  }
+  const quoted = disposition.match(/filename="([^"]+)"/i);
+  return quoted ? quoted[1] : fallbackName;
+}
+
+async function downloadMaterial(url, fallbackName) {
+  const response = await request(url);
+  if (!response.ok) throw new Error("download_failed");
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = downloadFilename(response, fallbackName);
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function showDetail(material) {
   detailFields.replaceChildren();
   detailActions.replaceChildren();
@@ -50,9 +81,19 @@ function showDetail(material) {
     description.textContent = String(value);
     detailFields.append(term, description);
   }
-  const download = document.createElement("a");
-  download.href = `/api/materials/${material.id}/download`;
+  const download = document.createElement("button");
+  download.type = "button";
   download.textContent = "下载材料";
+  download.addEventListener("click", async () => {
+    download.disabled = true;
+    try {
+      await downloadMaterial(`/api/materials/${material.id}/download`, material.display_name);
+    } catch (error) {
+      if (error.message !== "unauthorized") status.textContent = "下载材料失败，请稍后重试。";
+    } finally {
+      download.disabled = false;
+    }
+  });
   detailActions.append(download);
   if (currentUser.role === "teacher") {
     const remove = document.createElement("button");
@@ -249,9 +290,16 @@ retrievalForm.addEventListener("submit", async (event) => {
   retrievalResults.replaceChildren();
   for (const result of results) {
     const item = document.createElement("li");
-    const source = document.createElement("a");
-    source.href = result.download_url;
+    const source = document.createElement("button");
+    source.type = "button";
     source.textContent = `来源：${result.display_name}（${result.class_name}班，上传者 ${result.uploader_id}）`;
+    source.addEventListener("click", async () => {
+      try {
+        await downloadMaterial(result.download_url, result.display_name);
+      } catch (error) {
+        if (error.message !== "unauthorized") status.textContent = "下载来源材料失败，请稍后重试。";
+      }
+    });
     const excerpt = document.createElement("p");
     excerpt.textContent = result.excerpt;
     item.append(source, excerpt);

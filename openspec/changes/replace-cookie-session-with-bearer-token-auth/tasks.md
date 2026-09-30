@@ -26,7 +26,7 @@
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_browser_flow.py -k "login"`
 - [x] 3.3 Update the material workspace to recover identity from `/api/me`, route all protected reads and uploads through the shared client, clear the token on logout, and preserve the teacher/student presentation boundary.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_browser_flow.py tests/test_file_upload.py`
-- [ ] 3.4 Replace direct protected download links with authenticated blob downloads that preserve the server-provided filename.
+- [x] 3.4 Replace direct protected download links with authenticated blob downloads that preserve the server-provided filename.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_material_download.py -k "download or filename"`
 
 ## 4. Operations and documentation

@@ -65,3 +65,21 @@ def test_workspace_logout_and_unauthorized_clear_protected_state() -> None:
     assert "teacherUpload.replaceChildren();" in workspace
     assert "auth.clearToken();" in workspace
     assert 'window.location.replace("/login")' in workspace
+
+
+def test_download_uses_authenticated_blob_request_and_temporary_url() -> None:
+    workspace = (ROOT / "campusclaw" / "static" / "materials.js").read_text(encoding="utf-8")
+    assert "const response = await request(url);" in workspace
+    assert "const blob = await response.blob();" in workspace
+    assert "URL.createObjectURL(blob)" in workspace
+    assert "anchor.click();" in workspace
+    assert "URL.revokeObjectURL(objectUrl);" in workspace
+    assert "download.href = `/api/materials/" not in workspace
+
+
+def test_download_filename_prefers_content_disposition() -> None:
+    workspace = (ROOT / "campusclaw" / "static" / "materials.js").read_text(encoding="utf-8")
+    assert 'response.headers.get("Content-Disposition")' in workspace
+    assert "filename\\*=UTF-8''" in workspace
+    assert "decodeURIComponent(encoded[1])" in workspace
+    assert "anchor.download = downloadFilename(response, fallbackName);" in workspace
