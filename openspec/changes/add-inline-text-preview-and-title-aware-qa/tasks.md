@@ -7,7 +7,7 @@
 
 ## 2. Title-Directed Evidence
 
-- [ ] 2.1 Add bounded same-class full-title matching to keyword and hybrid chunk retrieval without changing vector-only cutoff or calling providers from keyword mode; verify with `python -m pytest -q tests/test_title_retrieval.py tests/test_keyword_retrieval.py tests/test_hybrid_retrieval.py tests/test_retrieval_security.py`.
+- [x] 2.1 Add bounded same-class full-title matching to keyword and hybrid chunk retrieval without changing vector-only cutoff or calling providers from keyword mode; verify with `python -m pytest -q tests/test_title_retrieval.py tests/test_keyword_retrieval.py tests/test_hybrid_retrieval.py tests/test_retrieval_security.py`.
 - [ ] 2.2 Verify that grounded asking cites the short source when its title appears in a natural-language question, and still refuses foreign or unrelated evidence; verify with `python -m pytest -q tests/test_title_ask.py tests/test_ask_api.py`.
 
 ## 3. Acceptance and Deployment

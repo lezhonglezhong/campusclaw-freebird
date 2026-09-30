@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import unicodedata
 from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -49,13 +50,19 @@ def keyword_retrieve(session: Session, query: str, class_id: int, limit: int = 2
     candidates = session.query(KnowledgeChunk).filter_by(
         class_id=class_id, text_status="ready"
     ).all()
+    titles = {
+        material.id: unicodedata.normalize("NFKC", material.display_name).strip().casefold()
+        for material in session.query(Material).filter_by(class_id=class_id).all()
+    }
     scored = []
-    needle = query.casefold()
+    needle = unicodedata.normalize("NFKC", query).casefold()
     for chunk in candidates:
         literal_count = chunk.chunk_text.casefold().count(needle)
         fulltext_score = fts_scores.get(chunk.id, 0.0)
-        if literal_count or fulltext_score:
-            scored.append((chunk, float(literal_count) + fulltext_score))
+        title = titles.get(chunk.material_id, "")
+        title_match = len(title) >= 3 and title in needle
+        if literal_count or fulltext_score or title_match:
+            scored.append((chunk, float(literal_count) + fulltext_score + (2.0 if title_match else 0.0)))
     scored.sort(key=lambda item: (-item[1], item[0].id))
     return [RankedChunk(chunk=chunk, keyword_score=score, keyword_rank=index)
             for index, (chunk, score) in enumerate(scored[:limit], start=1)]
