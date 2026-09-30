@@ -4,7 +4,7 @@
 
 - [x] 1.1 Add bounded, duplicate-free answer-evidence selection that excludes clearly unrelated candidates while retaining all retrieved value-bearing alternatives for comparison questions; verify with `python -m pytest -q tests/test_ask_evidence_selection.py tests/test_ask_api.py -k "selection or comparison or latest_question or no_evidence"`.
 - [x] 1.2 Return only distinct sources actually cited by the answer in first-appearance order, densely renumber markers and cards, and retry/reject missing, malformed, or numerically unsupported citations; verify with `python -m pytest -q tests/test_ask_citation_validation.py tests/test_ask_api.py tests/test_explicit_material_content_ask.py`.
-- [ ] 1.3 Require comparison answers to cite every selected value-bearing alternative, retry when a winner-only answer omits comparison evidence, and preserve ordinary answer citation projection; verify with `python -m pytest -q tests/test_ask_citation_validation.py tests/test_ask_evidence_selection.py tests/test_ask_api.py`.
+- [x] 1.3 Require comparison answers to cite every selected value-bearing alternative, retry when a winner-only answer omits comparison evidence, and preserve ordinary answer citation projection; verify with `python -m pytest -q tests/test_ask_citation_validation.py tests/test_ask_evidence_selection.py tests/test_ask_api.py`.
 
 ## 2. Retrieval and Browser Boundaries
 

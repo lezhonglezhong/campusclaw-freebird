@@ -62,6 +62,28 @@ def test_numeric_claim_requires_support_from_its_own_citation(monkeypatch):
     assert invalid is None
 
 
+def test_comparison_requires_every_selected_value_source(monkeypatch):
+    monkeypatch.setattr("campusclaw.knowledge_api.public_hit", public_source)
+    chosen = [
+        candidate(1, "一号楼下降150度", "one"),
+        candidate(2, "三号楼下降300度", "three"),
+        candidate(3, "四号楼下降40度", "four"),
+    ]
+
+    winner_only = validated_answer_response(
+        None, "三号楼下降300度最多[2]。", chosen,
+        require_all_value_sources=True,
+    )
+    complete = validated_answer_response(
+        None, "一号楼150度[1]，三号楼300度[2]，四号楼40度[3]，所以三号楼最多[2]。", chosen,
+        require_all_value_sources=True,
+    )
+
+    assert winner_only is None
+    assert complete is not None
+    assert [item["chunk_id"] for item in complete["citations"]] == [1, 2, 3]
+
+
 def test_citation_after_sentence_punctuation_supports_preceding_number(monkeypatch):
     monkeypatch.setattr("campusclaw.knowledge_api.public_hit", public_source)
     chosen = [candidate(1, "123456", "A班资料")]
@@ -135,3 +157,62 @@ def test_invalid_first_answer_can_retry_with_supported_numbers(tmp_path, monkeyp
     assert response.status_code == 200
     assert response.json["answer"] == "三号楼下降300度[1]。"
     assert len(response.json["citations"]) == 1
+
+
+def test_winner_only_comparison_retries_for_all_value_sources(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    headers = login(client)
+    chosen = [
+        candidate(1, "一号楼的用电量下降了150度。", "能耗"),
+        candidate(2, "三号楼的用电量下降了300度。", "能耗"),
+        candidate(3, "四号楼的用电量下降了40度。", "能耗"),
+    ]
+    monkeypatch.setattr("campusclaw.knowledge_api.hybrid_retrieve", lambda *args, **kwargs: chosen)
+    monkeypatch.setattr("campusclaw.knowledge_api.public_hit", public_source)
+    answers = iter([
+        "三号楼下降300度最多[2]。",
+        "一号楼150度[1]，三号楼300度[2]，四号楼40度[3]，所以三号楼最多[2]。",
+    ])
+    calls = []
+
+    class Chat:
+        def answer(self, instruction, question, history, sources):
+            calls.append((instruction, sources))
+            return next(answers)
+
+    app.extensions["chat_provider"] = Chat()
+    response = client.post("/api/ask", json={"question": "哪个楼的用电量下降最多？"}, headers=headers)
+
+    assert response.status_code == 200
+    assert len(calls) == 2
+    assert "不能只引用胜出项" in calls[0][0]
+    assert [item["excerpt"] for item in response.json["citations"]] == [
+        hit.chunk.chunk_text for hit in chosen
+    ]
+
+
+def test_repeated_winner_only_comparison_returns_safe_503(tmp_path, monkeypatch):
+    app = make_app(tmp_path)
+    client = app.test_client()
+    headers = login(client)
+    chosen = [
+        candidate(1, "一号楼下降150度", "能耗"),
+        candidate(2, "三号楼下降300度", "能耗"),
+        candidate(3, "四号楼下降40度", "能耗"),
+    ]
+    monkeypatch.setattr("campusclaw.knowledge_api.hybrid_retrieve", lambda *args, **kwargs: chosen)
+    monkeypatch.setattr("campusclaw.knowledge_api.public_hit", public_source)
+    calls = []
+
+    class Chat:
+        def answer(self, *args):
+            calls.append(args)
+            return "三号楼下降300度最多[2]。"
+
+    app.extensions["chat_provider"] = Chat()
+    response = client.post("/api/ask", json={"question": "哪个楼的用电量下降最多？"}, headers=headers)
+
+    assert response.status_code == 503
+    assert response.json == {"error": "chat_unavailable"}
+    assert len(calls) == 2
