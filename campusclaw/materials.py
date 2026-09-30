@@ -12,10 +12,56 @@ from werkzeug.utils import secure_filename
 from campusclaw.auth import require_authenticated_api, require_teacher
 from campusclaw.models import Material, User
 from campusclaw.knowledge_indexing import ensure_material_knowledge, vectorize_entry
+from campusclaw.knowledge_indexing import replace_material_chunks
+from campusclaw.chunking import ChunkingError, chunk_text
+from campusclaw.models import KnowledgeEntry
 from campusclaw.retrieval import index_material, remove_material_from_index
 
 
 materials_bp = Blueprint("materials", __name__, url_prefix="/api/materials")
+
+
+@materials_bp.post("/<int:material_id>/reindex")
+@require_teacher
+def reindex_material(user: User, material_id: int):
+    """Rebuild an own-class source index from its retained original body."""
+    db_session = current_app.extensions["sqlalchemy"]["session"]
+    material = db_session.query(Material).filter_by(id=material_id, class_id=user.class_id).one_or_none()
+    if material is None:
+        return jsonify(error="not_found"), 404
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="invalid_request"), 400
+    strategy = payload.get("strategy", "auto")
+    options = payload.get("options", {})
+    if not isinstance(options, dict) or not isinstance(strategy, str):
+        return jsonify(error="invalid_strategy"), 400
+    entry = db_session.query(KnowledgeEntry).filter_by(material_id=material.id).one_or_none()
+    try:
+        body = entry.body_text if entry is not None else Path(material.content_path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return jsonify(error="source_unavailable"), 503
+    try:
+        planned_chunks = chunk_text(body, strategy, options)
+    except ChunkingError:
+        return jsonify(error="invalid_strategy"), 400
+    if entry is None:
+        entry = ensure_material_knowledge(db_session, material, body)
+    old_ids = [chunk.id for chunk in entry.chunks if chunk.vector_status == "ready"]
+    store = current_app.extensions["vector_store"]
+    try:
+        if old_ids:
+            store.delete(old_ids)
+        replace_material_chunks(db_session, entry, planned_chunks, strategy, options)
+        vectorize_entry(db_session, entry, current_app.extensions["embedding_provider"], store)
+        db_session.commit()
+    except Exception:
+        db_session.rollback()
+        return jsonify(error="indexing_failed"), 503
+    return jsonify(
+        material_id=material.id, strategy=strategy, chunk_count=len(entry.chunks),
+        text_status=entry.text_status, vector_status=entry.vector_status,
+    )
 
 
 @materials_bp.get("/retrieve")
