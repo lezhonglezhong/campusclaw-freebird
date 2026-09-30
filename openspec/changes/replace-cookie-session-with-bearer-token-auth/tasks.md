@@ -9,7 +9,7 @@
 
 - [x] 2.1 Change `POST /login` to return `access_token`, `token_type: "Bearer"`, `expires_in`, and the authenticated user without setting an authentication cookie.
   - Verification: `pytest -q tests/test_auth.py tests/test_token_auth.py -k "login"`
-- [ ] 2.2 Replace session-based protection with a shared Bearer-token resolver that accepts tokens only from the `Authorization` header, verifies the token, reloads the user from the database, and returns a stable `401` response with `WWW-Authenticate: Bearer` for every authentication failure.
+- [x] 2.2 Replace session-based protection with a shared Bearer-token resolver that accepts tokens only from the `Authorization` header, verifies the token, reloads the user from the database, and returns a stable `401` response with `WWW-Authenticate: Bearer` for every authentication failure.
   - Verification: `pytest -q tests/test_token_auth.py -k "missing or malformed or expired or signature or unknown or reload or bearer"`
 - [ ] 2.3 Migrate `/api/me` and every existing protected API to the shared resolver so current database role and class membership govern authorization, never client input or token claims.
   - Verification: `pytest -q tests/test_auth.py tests/test_authorization.py tests/test_material_list.py tests/test_file_upload.py tests/test_material_download.py`

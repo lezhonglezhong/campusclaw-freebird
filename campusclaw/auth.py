@@ -54,6 +54,29 @@ def decode_access_token(token: str) -> int:
         raise TokenAuthenticationError from exc
 
 
+def unauthorized_response():
+    """Return the uniform Bearer challenge used by protected APIs."""
+    response = jsonify(error="unauthorized")
+    response.status_code = 401
+    response.headers["WWW-Authenticate"] = "Bearer"
+    return response
+
+
+def bearer_user() -> User | None:
+    """Resolve a valid Authorization Bearer credential to the current DB user."""
+    authorization_values = request.headers.getlist("Authorization")
+    if len(authorization_values) != 1:
+        return None
+    parts = authorization_values[0].split()
+    if len(parts) != 2 or parts[0].lower() != "bearer" or "," in parts[1]:
+        return None
+    try:
+        user_id = decode_access_token(parts[1])
+    except TokenAuthenticationError:
+        return None
+    return current_app.extensions["sqlalchemy"]["session"].get(User, user_id)
+
+
 def user_payload(user: User) -> dict[str, int | str]:
     """Return the public identity fields specified by the login contract."""
     return {
@@ -74,12 +97,12 @@ def session_user() -> User | None:
 
 
 def require_authenticated_api(view):
-    """Require a server-validated user for an API endpoint."""
+    """Require a Bearer token that resolves to a current database user."""
     @wraps(view)
     def wrapped(*args, **kwargs):
-        user = session_user()
+        user = bearer_user()
         if user is None:
-            return jsonify(error="unauthorized"), 401
+            return unauthorized_response()
         return view(user, *args, **kwargs)
     return wrapped
 
