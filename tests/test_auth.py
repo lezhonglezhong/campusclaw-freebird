@@ -45,19 +45,19 @@ def test_b_class_seeded_accounts_can_log_in(tmp_path: Path) -> None:
     assert me.json["user"]["account"] == "teacher-b"
 
 
-def test_unauthenticated_materials_redirects_and_invalid_login_has_no_session(tmp_path: Path) -> None:
+def test_materials_is_public_shell_and_invalid_login_has_no_token(tmp_path: Path) -> None:
     _app, client = make_client(tmp_path)
 
     response = client.get("/materials", follow_redirects=False)
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/login")
+    assert response.status_code == 200
+    assert b"teacher-a" not in response.data
 
     response = client.post("/login", json={"account": "teacher-a", "password": "wrong"})
     assert response.status_code == 401
     assert "access_token" not in response.get_json()
     assert "Set-Cookie" not in response.headers
-    with client.session_transaction() as session:
-        assert "user_id" not in session
+    assert "access_token" not in response.json
+    assert "Set-Cookie" not in response.headers
 
 
 def test_responses_do_not_expose_session_secret(tmp_path: Path) -> None:

@@ -12,14 +12,16 @@ def make_app(tmp_path: Path):
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'delete.sqlite3'}",
         "MATERIAL_STORAGE_DIR": str(tmp_path / "content"),
-        "SESSION_SECRET": "test-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
     seed_data(app)
     return app
 
 
 def login(client, account: str, password: str) -> None:
-    assert client.post("/login", json={"account": account, "password": password}).status_code == 200
+    response = client.post("/login", json={"account": account, "password": password})
+    assert response.status_code == 200
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {response.json['access_token']}"
 
 
 def test_teacher_deletes_own_class_material_and_content(tmp_path: Path) -> None:

@@ -8,11 +8,12 @@ from campusclaw.seed import seed_data
 
 
 def app_and_client(tmp_path: Path, account: str = "teacher-a"):
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'upload.sqlite3'}", "MATERIAL_STORAGE_DIR": str(tmp_path / "content"), "SESSION_SECRET": "test-secret"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'upload.sqlite3'}", "MATERIAL_STORAGE_DIR": str(tmp_path / "content"), "TOKEN_SIGNING_SECRET": "test-token-secret"})
     seed_data(app)
     client = app.test_client()
     password = "teacher-a-password" if account == "teacher-a" else "student-a-password"
-    client.post("/login", json={"account": account, "password": password})
+    login = client.post("/login", json={"account": account, "password": password})
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {login.json['access_token']}"
     return app, client
 
 

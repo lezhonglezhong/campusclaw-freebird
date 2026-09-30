@@ -15,7 +15,7 @@
   - Verification: `pytest -q tests/test_auth.py tests/test_authorization.py tests/test_material_list.py tests/test_file_upload.py tests/test_material_download.py`
 - [x] 2.4 Make `/materials` a data-free browser shell, make `/logout` return `204` without server-side revocation, remove Flask session authentication state, and explicitly reject cookie-only fallback.
   - Verification: `pytest -q tests/test_browser_session.py tests/test_token_auth.py -k "materials or logout or cookie"`
-- [ ] 2.5 Update backend test helpers and fixtures to authenticate with Bearer tokens, then retain regression coverage for teacher/student permissions and class isolation.
+- [x] 2.5 Update backend test helpers and fixtures to authenticate with Bearer tokens, then retain regression coverage for teacher/student permissions and class isolation.
   - Verification: `pytest -q tests/test_auth.py tests/test_authorization.py tests/test_material_list.py tests/test_file_upload.py tests/test_material_download.py`
 
 ## 3. Browser token lifecycle

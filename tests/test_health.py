@@ -9,7 +9,7 @@ def test_health_endpoint_is_public_and_minimal(tmp_path: Path) -> None:
     app = create_app({
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'health.sqlite3'}",
-        "SESSION_SECRET": "test-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
 
     response = app.test_client().get("/health")

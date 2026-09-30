@@ -8,10 +8,11 @@ from campusclaw.seed import seed_data
 
 
 def logged_in_client(tmp_path: Path):
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'materials.sqlite3'}", "SESSION_SECRET": "test-secret"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'materials.sqlite3'}", "TOKEN_SIGNING_SECRET": "test-token-secret"})
     seed_data(app)
     client = app.test_client()
-    client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    login = client.post("/login", json={"account": "teacher-a", "password": "teacher-a-password"})
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {login.json['access_token']}"
     return app, client
 
 

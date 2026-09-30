@@ -1,4 +1,4 @@
-"""Class-scoped material name-search tests for teacher and student sessions."""
+"""Class-scoped material name-search tests for teacher and student tokens."""
 
 from pathlib import Path
 
@@ -11,14 +11,16 @@ def make_app(tmp_path: Path):
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'search.sqlite3'}",
         "MATERIAL_STORAGE_DIR": str(tmp_path / "content"),
-        "SESSION_SECRET": "test-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
     seed_data(app)
     return app
 
 
 def login(client, account: str, password: str) -> None:
-    assert client.post("/login", json={"account": account, "password": password}).status_code == 200
+    response = client.post("/login", json={"account": account, "password": password})
+    assert response.status_code == 200
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {response.json['access_token']}"
 
 
 def test_teacher_and_student_search_only_material_names_in_own_class(tmp_path: Path) -> None:

@@ -7,7 +7,7 @@ from campusclaw.models import Class, Material, User
 
 
 def test_models_create_and_relate_class_user_and_material(tmp_path: Path) -> None:
-    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'models.sqlite3'}", "SESSION_SECRET": "test-secret"})
+    app = create_app({"TESTING": True, "DATABASE_URL": f"sqlite:///{tmp_path / 'models.sqlite3'}", "TOKEN_SIGNING_SECRET": "test-token-secret"})
     session = app.extensions["sqlalchemy"]["session"]
     class_a = Class(name="A")
     teacher = User(account="teacher-a", password_hash="hash", role="teacher", class_=class_a)
