@@ -8,7 +8,7 @@
 
 - [x] 1.1 Add environment-driven database, Qdrant, gateway, timeout, and vector-dimension configuration; implement independent embedding/chat/vector-store contracts and OpenAI-compatible adapters that append `/embeddings` or `/chat/completions` to the `/v1` base, use `course-embedding` and `course-chat`, send only `model` plus `input` for embeddings, validate 2048 numeric dimensions, reject serialized requests above 20 MB, authenticate without logging secrets, and remain injectable for tests; verify with `python -m pytest -q tests/test_config.py tests/test_ai_providers.py tests/test_vector_store.py tests/test_token_auth.py`.
 - [x] 1.2 Add `KnowledgeEntry` and `KnowledgeChunk` persistence models, relationships, uniqueness/cascade rules, separate text/vector statuses, and dialect-aware full-text index bootstrap without altering existing material records; verify with `python -m pytest -q tests/test_models.py tests/test_knowledge_models.py tests/test_retrieval_index.py`.
-- [ ] 1.3 Implement the pure `auto`, `custom`, and `hierarchy` chunking service, including boundary preference, overlap, Markdown-heading retention, preprocessing, offsets, and parameter validation; verify with `python -m pytest -q tests/test_chunking.py`.
+- [x] 1.3 Implement the pure `auto`, `custom`, and `hierarchy` chunking service, including boundary preference, overlap, Markdown-heading retention, preprocessing, offsets, and parameter validation; verify with `python -m pytest -q tests/test_chunking.py`.
 
 ## 2. Index Lifecycle
 
