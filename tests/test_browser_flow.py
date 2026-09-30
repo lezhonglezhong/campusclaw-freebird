@@ -12,27 +12,31 @@ def make_app(tmp_path: Path):
         "TESTING": True,
         "DATABASE_URL": f"sqlite:///{tmp_path / 'browser-flow.sqlite3'}",
         "MATERIAL_STORAGE_DIR": str(tmp_path / "content"),
-        "SESSION_SECRET": "test-secret",
+        "TOKEN_SIGNING_SECRET": "test-token-secret",
     })
     seed_data(app)
     return app
 
 
-def login(client, account: str, password: str) -> None:
+def login(client, account: str, password: str) -> str:
     response = client.post("/login", json={"account": account, "password": password})
     assert response.status_code == 200
+    token = response.json["access_token"]
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"
+    return token
 
 
-def test_browser_login_session_recovery_protected_page_and_logout(tmp_path: Path) -> None:
+def test_browser_login_token_recovery_shell_and_logout(tmp_path: Path) -> None:
     app = make_app(tmp_path)
     client = app.test_client()
 
-    assert client.get("/materials").status_code == 302
+    assert client.get("/materials").status_code == 200
     login(client, "teacher-a", "teacher-a-password")
     assert client.get("/materials").status_code == 200
     assert client.get("/api/me").json["user"]["role"] == "teacher"
     assert client.post("/logout").status_code == 204
-    assert client.get("/materials").status_code == 302
+    client.environ_base.pop("HTTP_AUTHORIZATION")
+    assert client.get("/materials").status_code == 200
     assert client.get("/api/me").status_code == 401
 
 

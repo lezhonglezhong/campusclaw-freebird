@@ -34,3 +34,13 @@ def test_login_and_workspace_load_shared_authorization_client_first() -> None:
         template = (ROOT / "campusclaw" / "templates" / template_name).read_text(encoding="utf-8")
         assert "auth-client.js" in template
         assert template.index("auth-client.js") < template.index(page_script)
+
+
+def test_login_stores_only_returned_access_token_before_navigation() -> None:
+    login_script = (ROOT / "campusclaw" / "static" / "login.js").read_text(encoding="utf-8")
+    assert "auth.clearToken();" in login_script
+    assert "const payload = await response.json();" in login_script
+    assert "auth.setToken(payload.access_token);" in login_script
+    assert 'window.location.assign("/materials")' in login_script
+    assert 'form.elements.password.value = ""' in login_script
+    assert "payload.user" not in login_script

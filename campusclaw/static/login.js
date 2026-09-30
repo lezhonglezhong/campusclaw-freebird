@@ -1,5 +1,6 @@
 const form = document.querySelector("#login-form");
 const status = document.querySelector("#login-status");
+const auth = window.CampusClawAuth;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -13,6 +14,7 @@ form.addEventListener("submit", async (event) => {
   const button = form.querySelector("button");
   button.disabled = true;
   status.textContent = "正在登录…";
+  auth.clearToken();
   try {
     const response = await fetch("/login", {
       method: "POST",
@@ -20,6 +22,8 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify({ account, password }),
     });
     if (response.ok) {
+      const payload = await response.json();
+      auth.setToken(payload.access_token);
       window.location.assign("/materials");
       return;
     }
@@ -29,6 +33,7 @@ form.addEventListener("submit", async (event) => {
   } catch {
     status.textContent = "暂时无法连接 CampusClaw，请稍后重试。";
   } finally {
+    form.elements.password.value = "";
     button.disabled = false;
   }
 });
