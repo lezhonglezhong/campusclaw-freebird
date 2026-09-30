@@ -2,7 +2,7 @@
 
 ## 0. Authentication Prerequisite
 
-- [ ] 0.1 Apply `replace-cookie-session-with-bearer-token-auth` first and verify login returns a JWT while protected APIs reject missing/invalid Bearer headers and resolve role/class from the database; verify with `python -m pytest -q tests/test_token_auth.py tests/test_browser_token_auth.py`.
+- [x] 0.1 Apply `replace-cookie-session-with-bearer-token-auth` first and verify login returns a JWT while protected APIs reject missing/invalid Bearer headers and resolve role/class from the database; verify with `python -m pytest -q tests/test_token_auth.py tests/test_browser_token_auth.py`.
 
 ## 1. Foundations
 
