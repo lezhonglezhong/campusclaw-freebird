@@ -1,6 +1,7 @@
 """Bearer-authenticated knowledge retrieval and answer API."""
 
 import re
+import unicodedata
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -34,6 +35,35 @@ def parse_ask_payload(payload: object) -> tuple[str, list[dict[str, str]]]:
             raise ValueError("invalid_history")
         history.append({"role": role, "content": content.strip()[:1000]})
     return question.strip(), history[-6:]
+
+
+def explicit_short_source_answer(session, question: str, hits: list) -> dict | None:
+    """Quote a complete short source only for an unambiguous material-content question."""
+    normalized_question = unicodedata.normalize("NFKC", question).casefold()
+    if not re.search(r"(?:内容|正文|原文)(?:是|有|写了)?(?:什么|啥|哪些)", normalized_question):
+        return None
+    eligible = []
+    for hit in hits:
+        source = public_hit(session, hit)
+        title = unicodedata.normalize("NFKC", source["material_title"]).strip().casefold()
+        entry = hit.chunk.entry
+        body = entry.body_text
+        if (
+            len(title) < 3 or title not in normalized_question
+            or not body or len(body) > 500
+            or hit.chunk.start_offset != 0
+            or hit.chunk.end_offset != len(body)
+            or hit.chunk.chunk_text != body
+        ):
+            continue
+        eligible.append((source, body))
+    if len(eligible) != 1:
+        return None
+    source, body = eligible[0]
+    return {
+        "answer": f"《{source['material_title']}》的材料原文是：{body} [1]",
+        "citations": [dict(number=1, **source)],
+    }
 
 
 @knowledge_bp.post("/ask")
@@ -81,6 +111,9 @@ def ask_knowledge(user: User):
             or "not enough information" in answer.casefold()
             or "insufficient information" in answer.casefold()
         ):
+            literal_answer = explicit_short_source_answer(session, question, chosen)
+            if literal_answer is not None:
+                return jsonify(literal_answer)
             return jsonify(answer="资料中未找到相关内容", citations=[])
         if markers and all(1 <= marker <= len(chosen) for marker in markers):
             break
