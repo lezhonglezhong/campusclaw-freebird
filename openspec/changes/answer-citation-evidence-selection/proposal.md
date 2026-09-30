@@ -11,8 +11,9 @@ make irrelevant background material look like supporting evidence.
 
 - Require generated-answer citations to drive the ordered source list returned
   by `POST /api/ask`, rather than returning every prompt candidate.
-- Preserve the complete selected numerical evidence needed for comparison
-  questions while excluding clearly irrelevant candidates from the chat prompt.
+- Preserve and require citations for the complete selected numerical evidence
+  needed for comparison questions while excluding clearly irrelevant candidates
+  from the chat prompt and answer sources.
 - Validate that numerical answer claims are supported by cited chunk text;
   retry once for unsupported or malformed citations, then reject the answer.
 - Keep the independent retrieval endpoint's broader result list, hybrid RRF,

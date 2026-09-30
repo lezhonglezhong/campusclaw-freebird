@@ -29,7 +29,7 @@ This is preferred over asking `course-chat` to select evidence because a selecto
 
 ### Validate and project citations after generation
 
-Validation will parse supplied `[n]` markers, reject missing or out-of-range markers, and examine punctuation-bounded numeric claims. Every Arabic number in a claim must occur in at least one source cited by that claim. Citation-marker digits themselves are excluded from numeric checking. A failed first answer is retried with the same selected sources and a stricter instruction; a failed second answer returns the stable 503 error.
+Validation will parse supplied `[n]` markers, reject missing or out-of-range markers, and examine punctuation-bounded numeric claims. Every Arabic number in a claim must occur in at least one source cited by that claim. For a detected comparison whose selected evidence is value-bearing, the marker set must also cover every selected value-bearing chunk, preventing a correct winner from hiding the alternatives needed to audit the comparison. Citation-marker digits themselves are excluded from numeric checking. A failed first answer is retried with the same selected sources and a stricter instruction; a failed second answer returns the stable 503 error.
 
 After validation, distinct markers are collected in first-appearance order. The server maps them to their source hits, rewrites markers to a dense `1..N` sequence, and returns only those sources. This keeps the UI contract simple and prevents uncited prompt candidates from appearing as answer sources.
 
