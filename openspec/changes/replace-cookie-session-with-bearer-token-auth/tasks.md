@@ -24,7 +24,7 @@
   - Verification: `pytest -q tests/test_browser_token_auth.py -k "storage or authorization or unauthorized"`
 - [x] 3.2 Update the login page to store only the returned access token in `sessionStorage`, handle invalid credentials without navigation, and enter the material workspace after successful authentication.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_browser_flow.py -k "login"`
-- [ ] 3.3 Update the material workspace to recover identity from `/api/me`, route all protected reads and uploads through the shared client, clear the token on logout, and preserve the teacher/student presentation boundary.
+- [x] 3.3 Update the material workspace to recover identity from `/api/me`, route all protected reads and uploads through the shared client, clear the token on logout, and preserve the teacher/student presentation boundary.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_browser_flow.py tests/test_file_upload.py`
 - [ ] 3.4 Replace direct protected download links with authenticated blob downloads that preserve the server-provided filename.
   - Verification: `pytest -q tests/test_browser_token_auth.py tests/test_material_download.py -k "download or filename"`

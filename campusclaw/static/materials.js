@@ -8,6 +8,8 @@ const teacherUpload = document.querySelector("#teacher-upload");
 const searchForm = document.querySelector("#material-search-form");
 const retrievalForm = document.querySelector("#content-retrieval-form");
 const retrievalResults = document.querySelector("#content-retrieval-results");
+const auth = window.CampusClawAuth;
+const request = auth.request;
 let currentUser;
 
 function roleLabel(role) {
@@ -18,20 +20,19 @@ function materialStatusLabel(value) {
   return { ready: "已入库" }[value] || value;
 }
 
-function redirectToLogin() {
+function clearProtectedView() {
+  currentUser = undefined;
+  userContext.textContent = "";
   list.replaceChildren();
+  detailFields.replaceChildren();
+  detailActions.replaceChildren();
+  retrievalResults.replaceChildren();
+  teacherUpload.replaceChildren();
+  teacherUpload.hidden = true;
   detail.hidden = true;
-  window.location.replace("/login");
 }
 
-async function request(path, options) {
-  const response = await fetch(path, options);
-  if (response.status === 401) {
-    redirectToLogin();
-    throw new Error("unauthorized");
-  }
-  return response;
-}
+window.addEventListener("campusclaw:unauthorized", clearProtectedView);
 
 function showDetail(material) {
   detailFields.replaceChildren();
@@ -207,6 +208,10 @@ function renderTeacherUpload(user) {
 }
 
 async function initializeWorkspace() {
+  if (!auth.getToken()) {
+    auth.handleUnauthorized();
+    return;
+  }
   try {
     const response = await request("/api/me");
     if (!response.ok) throw new Error("identity_failed");
@@ -221,8 +226,13 @@ async function initializeWorkspace() {
 }
 
 document.querySelector("#logout-button").addEventListener("click", async () => {
-  await fetch("/logout", { method: "POST" });
-  redirectToLogin();
+  try {
+    if (auth.getToken()) await request("/logout", { method: "POST" });
+  } finally {
+    clearProtectedView();
+    auth.clearToken();
+    window.location.replace("/login");
+  }
 });
 
 searchForm.addEventListener("submit", async (event) => {

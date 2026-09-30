@@ -44,3 +44,24 @@ def test_login_stores_only_returned_access_token_before_navigation() -> None:
     assert 'window.location.assign("/materials")' in login_script
     assert 'form.elements.password.value = ""' in login_script
     assert "payload.user" not in login_script
+
+
+def test_workspace_routes_protected_calls_through_shared_client() -> None:
+    workspace = (ROOT / "campusclaw" / "static" / "materials.js").read_text(encoding="utf-8")
+    assert "const auth = window.CampusClawAuth;" in workspace
+    assert "const request = auth.request;" in workspace
+    assert 'request("/api/me")' in workspace
+    assert 'request("/api/materials"' in workspace
+    assert 'request(`/api/materials/${id}`)' in workspace
+    assert 'request("/logout", { method: "POST" })' in workspace
+    assert 'fetch("/api/' not in workspace
+
+
+def test_workspace_logout_and_unauthorized_clear_protected_state() -> None:
+    workspace = (ROOT / "campusclaw" / "static" / "materials.js").read_text(encoding="utf-8")
+    assert 'window.addEventListener("campusclaw:unauthorized", clearProtectedView)' in workspace
+    assert "list.replaceChildren();" in workspace
+    assert "retrievalResults.replaceChildren();" in workspace
+    assert "teacherUpload.replaceChildren();" in workspace
+    assert "auth.clearToken();" in workspace
+    assert 'window.location.replace("/login")' in workspace
