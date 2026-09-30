@@ -12,4 +12,4 @@
 
 ## 3. Final Acceptance
 
-- [ ] 3.1 Run the full suite, validate the change strictly, and check Compose and service health; verify with `python -m pytest -q && openspec validate fix-mysql-material-index-lifecycle --strict && docker compose config --quiet`.
+- [x] 3.1 Run the full suite, validate the change strictly, and check Compose and service health; verify with `python -m pytest -q && openspec validate fix-mysql-material-index-lifecycle --strict && docker compose config --quiet`.
