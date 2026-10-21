@@ -96,3 +96,12 @@ class KnowledgeChunk(Base):
     vector_status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     entry: Mapped[KnowledgeEntry] = relationship(back_populates="chunks")
     class_: Mapped[Class] = relationship(back_populates="knowledge_chunks")
+
+
+class PromptTemplate(Base):
+    """Reusable teacher-authored prompt, visible only within its class."""
+    __tablename__ = 'prompt_templates'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)

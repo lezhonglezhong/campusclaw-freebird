@@ -14,6 +14,7 @@ from campusclaw.materials import materials_bp
 from campusclaw.runtime_config import ConfigurationError, load_gateway_settings
 from campusclaw.vector_store import QdrantVectorStore
 from campusclaw.seed import register_seed_command
+from campusclaw.platform_api import platform_bp
 
 
 DEFAULT_TOKEN_TTL_SECONDS = 3600
@@ -74,6 +75,7 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(materials_bp)
     app.register_blueprint(knowledge_bp)
+    app.register_blueprint(platform_bp)
 
     @app.get("/health")
     def health_check():
