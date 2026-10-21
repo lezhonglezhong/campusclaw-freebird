@@ -4,7 +4,7 @@
 - [x] 1.1 Add distinct application catalog, class-scoped prompt persistence and teacher CRUD, variable rendering and authorization tests. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_catalog.py`
 
 ## 2. Declarative skills
-- [ ] 2.1 Add two built-in skills, strict JSON upload/inspection/deletion, class authorization and sequential callback executor with complete manifest context. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_skills.py`
+- [x] 2.1 Add two built-in skills, strict JSON upload/inspection/deletion, class authorization and sequential callback executor with complete manifest context. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_skills.py`
 
 ## 3. External connectors
 - [ ] 3.1 Add configured HTTP/MCP clients, class enablement/discovery, schema validation, JSON/SSE/session handling and model exchange/tool loop with bounded calls. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_connectors.py`

@@ -70,3 +70,48 @@ def delete_template(user, item_id):
     session().delete(item)
     session().commit()
     return '', 204
+
+
+@platform_bp.get('/skills')
+@require_authenticated_api
+def skills(user):
+    import json
+    from campusclaw.models import UploadedSkill
+    from campusclaw.platform_skills import BUILTIN_SKILLS
+    items = [{'id': 'builtin:'+key, 'builtin': True, 'manifest': manifest}
+             for key, manifest in BUILTIN_SKILLS.items()]
+    items.extend({'id': 'uploaded:'+str(item.id), 'builtin': False, 'manifest': json.loads(item.manifest)}
+                 for item in session().query(UploadedSkill).filter_by(class_id=user.class_id).order_by(UploadedSkill.id))
+    return jsonify(skills=items)
+
+
+@platform_bp.post('/skills')
+@require_teacher
+def upload_skill(user):
+    import json
+    from campusclaw.models import UploadedSkill
+    from campusclaw.platform_skills import MAX_SKILL_BYTES, parse_skill
+    from werkzeug.exceptions import RequestEntityTooLarge
+    request.max_content_length = 64 * 1024
+    try:
+        uploaded = request.files.get('file')
+        if uploaded is None or not (uploaded.filename or '').lower().endswith('.json'):
+            raise ValueError()
+        manifest = parse_skill(uploaded.read(MAX_SKILL_BYTES + 1))
+    except (ValueError, RequestEntityTooLarge):
+        return jsonify(error='invalid_skill'), 400
+    item = UploadedSkill(class_id=user.class_id, manifest=json.dumps(manifest, ensure_ascii=False))
+    session().add(item)
+    session().commit()
+    return jsonify(skill={'id': 'uploaded:'+str(item.id), 'builtin': False, 'manifest': manifest}), 201
+
+
+@platform_bp.delete('/skills/<int:item_id>')
+@require_teacher
+def delete_skill(user, item_id):
+    from campusclaw.models import UploadedSkill
+    item = session().query(UploadedSkill).filter_by(id=item_id, class_id=user.class_id).one_or_none()
+    if item is None: return jsonify(error='not_found'), 404
+    session().delete(item)
+    session().commit()
+    return '', 204

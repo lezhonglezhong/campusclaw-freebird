@@ -105,3 +105,11 @@ class PromptTemplate(Base):
     class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class UploadedSkill(Base):
+    """A validated declarative skill; never a server-side executable file."""
+    __tablename__ = 'uploaded_skills'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False, index=True)
+    manifest: Mapped[str] = mapped_column(Text, nullable=False)
