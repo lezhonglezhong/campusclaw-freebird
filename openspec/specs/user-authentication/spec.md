@@ -18,28 +18,28 @@ The system SHALL authenticate teacher and student accounts using an account iden
 - **THEN** the system rejects the login and does not establish an authenticated user context
 
 ### Requirement: Authentication interface contract
-The system SHALL expose `POST /login` accepting a JSON body with non-empty `account` and `password` fields. On valid credentials it SHALL return HTTP 200 with at least `{ "user": { "id", "account", "role", "class_id", "class_name" } }` and establish the authenticated server-recognized session context. On unknown or invalid credentials it SHALL return HTTP 401 with at least `{ "error": "invalid_credentials" }`; malformed input SHALL return HTTP 400 with at least an `error` field. This change does not require logout or a client-visible session-inspection endpoint.
+The system SHALL expose POST /login accepting non-empty account and password. Success SHALL return HTTP 200 with user identity, access_token, token_type=Bearer and expires_in. It SHALL NOT establish or accept a login Cookie. Invalid credentials SHALL return 401 and malformed input 400. Browser clients SHALL store tokens in sessionStorage and protected APIs SHALL require Authorization: Bearer.
 
 #### Scenario: Login interface returns the authenticated identity
-- **WHEN** a user posts valid JSON credentials to `POST /login`
-- **THEN** the response is HTTP 200, includes the required user identity fields, and establishes the server-recognized context
+- **WHEN** a user supplies valid credentials
+- **THEN** JSON includes the user and access token and no authentication cookie is set
 
 ### Requirement: Protected page login handling
-The system SHALL redirect an unauthenticated request for a protected page to the login page.
+The system SHALL serve the /materials and /apps page shells without server Cookie authentication. Client code SHALL redirect users without a sessionStorage token to /login; protected API requests SHALL return JSON 401 when the Bearer token is missing or invalid.
 
 #### Scenario: Unauthenticated protected-page visit
-- **WHEN** a visitor without an authenticated user context requests a protected page
-- **THEN** the system directs the visitor to the login page
+- **WHEN** a visitor without an access token opens the page shell
+- **THEN** the client redirects to login and protected APIs remain inaccessible
 
 ### Requirement: Protected-page contract
-The system SHALL treat `GET /materials` as a protected browser page. An unauthenticated request SHALL receive HTTP 302 with a `Location` header for `/login`. API authentication failures are governed by their individual API contracts and are not browser redirects.
+The system SHALL serve the /materials and /apps page shells without server Cookie authentication. Client code SHALL redirect users without a sessionStorage token to /login; protected API requests SHALL return JSON 401 when the Bearer token is missing or invalid.
 
 #### Scenario: Browser visit to the protected page is redirected
-- **WHEN** a visitor without an authenticated user context sends `GET /materials`
-- **THEN** the response is HTTP 302 with a `Location` header for `/login`
+- **WHEN** a visitor without an access token opens the page shell
+- **THEN** the client redirects to login and protected APIs remain inaccessible
 
 ### Requirement: Secure credential and secret storage
-The system MUST store passwords only as secure password hashes and MUST NOT persist or expose plaintext passwords. The authentication session secret SHALL be supplied only through the server-side `SESSION_SECRET` environment variable; it MUST NOT be delivered to browser clients or committed as a real source-controlled value. Application startup SHALL fail when `SESSION_SECRET` is absent.
+The system MUST store passwords only as secure password hashes and MUST NOT persist or expose plaintext passwords. The authentication session secret SHALL be supplied only through the server-side `TOKEN_SIGNING_SECRET` environment variable; it MUST NOT be delivered to browser clients or committed as a real source-controlled value. Application startup SHALL fail when `TOKEN_SIGNING_SECRET` is absent.
 
 #### Scenario: Account credential is persisted
 - **WHEN** the system stores or updates an account password
