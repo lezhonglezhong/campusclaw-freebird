@@ -115,3 +115,48 @@ def delete_skill(user, item_id):
     session().delete(item)
     session().commit()
     return '', 204
+
+
+def enabled_connectors(user):
+    from campusclaw.models import ConnectorBinding
+    enabled = {item.connector_id for item in session().query(ConnectorBinding).filter_by(class_id=user.class_id)}
+    return {key:value for key,value in current_app.config['PLATFORM_CONNECTORS'].items() if key in enabled}
+
+
+@platform_bp.get('/connectors')
+@require_authenticated_api
+def connectors(user):
+    enabled = enabled_connectors(user)
+    return jsonify(connectors=[{'id':key,'label':value['label'],'type':value['type'],'enabled':key in enabled}
+        for key,value in current_app.config['PLATFORM_CONNECTORS'].items() if user.role == 'teacher' or key in enabled])
+
+
+@platform_bp.put('/connectors/<connector_id>')
+@require_teacher
+def enable_connector(user, connector_id):
+    from campusclaw.models import ConnectorBinding
+    if connector_id not in current_app.config['PLATFORM_CONNECTORS']: return jsonify(error='not_found'), 404
+    payload = request.get_json(silent=True)
+    if not isinstance(payload,dict) or type(payload.get('enabled')) is not bool: return jsonify(error='invalid_request'),400
+    item = session().query(ConnectorBinding).filter_by(class_id=user.class_id,connector_id=connector_id).one_or_none()
+    if payload['enabled'] and item is None:
+        session().add(ConnectorBinding(class_id=user.class_id,connector_id=connector_id))
+    if not payload['enabled'] and item is not None: session().delete(item)
+    session().commit()
+    return jsonify(enabled=payload['enabled'])
+
+
+@platform_bp.get('/tools')
+@require_authenticated_api
+def discover_tools(user):
+    from campusclaw.platform_tools import ToolRegistry, ToolUnavailable
+    tools, errors = [], []
+    for key, config in enabled_connectors(user).items():
+        try:
+            registry = ToolRegistry([config])
+            try:
+                tools.extend({'connector_id':key,'definition':entry['definition']} for entry in registry.entries.values())
+            finally: registry.close()
+        except ToolUnavailable:
+            errors.append({'connector_id':key,'error':'tool_unavailable'})
+    return jsonify(tools=tools,errors=errors)

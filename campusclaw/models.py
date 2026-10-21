@@ -113,3 +113,11 @@ class UploadedSkill(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False, index=True)
     manifest: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class ConnectorBinding(Base):
+    __tablename__ = 'connector_bindings'
+    __table_args__ = (UniqueConstraint('class_id', 'connector_id', name='uq_class_connector'),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False)
+    connector_id: Mapped[str] = mapped_column(String(32), nullable=False)

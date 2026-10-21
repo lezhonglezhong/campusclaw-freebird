@@ -15,6 +15,8 @@ from campusclaw.runtime_config import ConfigurationError, load_gateway_settings
 from campusclaw.vector_store import QdrantVectorStore
 from campusclaw.seed import register_seed_command
 from campusclaw.platform_api import platform_bp
+from campusclaw.platform_tools import configured_tools
+from campusclaw.platform_chat import PlatformChat
 
 
 DEFAULT_TOKEN_TTL_SECONDS = 3600
@@ -58,6 +60,9 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     if test_config is not None:
         app.config.update(test_config)
 
+    app.config["PLATFORM_CONNECTORS"] = configured_tools(
+        app.config.get("PLATFORM_CONNECTORS_JSON", os.environ.get("PLATFORM_CONNECTORS_JSON", "[]"))
+    )
     _validate_token_config(app)
     try:
         gateway_settings = load_gateway_settings(os.environ | {
@@ -68,6 +73,7 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     app.config["GATEWAY_SETTINGS"] = gateway_settings
     app.extensions["embedding_provider"] = OpenAIEmbeddingProvider(gateway_settings)
     app.extensions["chat_provider"] = OpenAIChatProvider(gateway_settings)
+    app.extensions["platform_chat"] = PlatformChat(gateway_settings)
     app.extensions["vector_store"] = QdrantVectorStore(gateway_settings)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     init_db(app)
