@@ -3,3 +3,11 @@ __pycache__/
 *.py[cod]
 instance/
 .env
+.agents/skills/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
