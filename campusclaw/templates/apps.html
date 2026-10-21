@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusClaw · AI 应用</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='platform.css') }}">
+</head>
+<body>
+<main class="workspace">
+  <header class="workspace-header">
+    <div><p class="eyebrow">CampusClaw</p><h1>AI 应用工作台</h1><p id="platform-user" class="muted">正在加载…</p></div>
+    <nav><a href="/materials">知识库与资料问答</a> <button id="platform-logout" type="button">退出登录</button></nav>
+  </header>
+  <p id="platform-status" role="status" aria-live="polite" class="status"></p>
+  <div class="workspace-grid">
+    <section class="panel"><h2>选择应用并运行</h2>
+      <form id="run-form">
+        <label for="app-id">AI 应用</label><select id="app-id" required></select>
+        <p id="app-description" class="muted"></p>
+        <label for="run-input">你的内容或目标</label><textarea id="run-input" rows="5" maxlength="4000" required></textarea>
+        <label for="audience">目标读者</label><input id="audience" value="学生" maxlength="200" required>
+        <label for="template-id">提示词模板</label><select id="template-id"><option value="">应用默认模板</option></select>
+        <details><summary>预览将发送的模板</summary><pre id="template-preview"></pre></details>
+        <label for="skill-id">Skill 技能</label><select id="skill-id"><option value="">不使用技能</option></select>
+        <details><summary>查看选中技能的完整内容</summary><pre id="skill-preview">未选择技能</pre></details>
+        <label class="checkbox"><input id="use-knowledge" type="checkbox">绑定本班知识库（仅使用检索到的资料回答）</label>
+        <fieldset><legend>允许本次使用的外部工具</legend><div id="tool-choices"></div></fieldset>
+        <p class="muted">只调用你勾选的工具。技能可能分多步执行，请等待结果。</p>
+        <button id="run-button" type="submit">运行应用</button>
+      </form>
+    </section>
+    <section class="panel"><h2>执行结果</h2>
+      <p id="run-status" role="status" aria-live="polite" class="status"></p>
+      <pre id="run-answer" class="answer-card" hidden></pre><ol id="run-citations"></ol>
+      <details id="run-evidence"><summary>请求、返回与技能／工具执行记录</summary><pre id="run-trace">运行后可在这里查看完整记录。</pre></details>
+      <h2>我的最近运行</h2><ul id="run-history" class="material-list"></ul>
+    </section>
+    <section id="template-management" class="panel" hidden><h2>管理班级提示词模板</h2>
+      <form id="template-form">
+        <label for="edit-template-id">编辑已有模板或新建</label><select id="edit-template-id"><option value="">新建模板</option></select>
+        <label for="template-name">模板名称</label><input id="template-name" maxlength="120" required>
+        <label for="template-content">模板内容</label><textarea id="template-content" maxlength="8000" rows="5" required placeholder="请向 {{ '{{audience}}' }} 解释 {{ '{{input}}' }}"></textarea>
+        <p class="muted">支持变量 {{ '{{input}}' }}（输入）和 {{ '{{audience}}' }}（目标读者）。</p>
+        <button type="submit">保存模板</button> <button id="delete-template" type="button" disabled>删除模板</button>
+      </form><p id="template-status" class="status" role="status"></p>
+    </section>
+    <section id="skill-management" class="panel" hidden><h2>上传班级 Skill</h2>
+      <p>支持最多 16 KiB 的 JSON 声明式技能，包含一至三个模型步骤。<a href="/static/example-skill.json" download>下载示例技能</a></p>
+      <form id="skill-form"><label for="skill-file">技能文件</label><input id="skill-file" type="file" accept=".json,application/json" required><button type="submit">上传技能</button></form>
+      <button id="delete-skill" type="button" disabled>删除选中的上传技能</button><p id="skill-status" class="status" role="status"></p>
+    </section>
+    <section id="connector-management" class="panel" hidden><h2>管理班级外部连接</h2>
+      <p class="muted">启用部署者配置的 HTTP 或 MCP 服务，再在应用中选择具体工具。</p>
+      <div id="connector-controls"></div><p id="connector-status" class="status" role="status"></p>
+    </section>
+  </div>
+</main>
+<script src="{{ url_for('static', filename='auth-client.js') }}" defer></script>
+<script src="{{ url_for('static', filename='platform.js') }}" defer></script>
+</body></html>

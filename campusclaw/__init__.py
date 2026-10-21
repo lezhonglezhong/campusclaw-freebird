@@ -60,9 +60,15 @@ def create_app(test_config: Mapping[str, object] | None = None) -> Flask:
     if test_config is not None:
         app.config.update(test_config)
 
-    app.config["PLATFORM_CONNECTORS"] = configured_tools(
-        app.config.get("PLATFORM_CONNECTORS_JSON", os.environ.get("PLATFORM_CONNECTORS_JSON", "[]"))
-    )
+    connector_config = app.config.get("PLATFORM_CONNECTORS_JSON", os.environ.get("PLATFORM_CONNECTORS_JSON"))
+    if connector_config is None or connector_config == "":
+        demo_url = os.environ.get("PLATFORM_DEMO_TOOLS_URL")
+        if demo_url:
+            from campusclaw.demo_tools import demo_connectors
+            connector_config = demo_connectors(demo_url)
+        else:
+            connector_config = []
+    app.config["PLATFORM_CONNECTORS"] = configured_tools(connector_config)
     _validate_token_config(app)
     try:
         gateway_settings = load_gateway_settings(os.environ | {

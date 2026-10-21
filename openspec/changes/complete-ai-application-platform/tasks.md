@@ -13,7 +13,7 @@
 - [x] 4.1 Connect selected application/template/skill/knowledge/tools to execution and owner-scoped exact traces, citations, errors and integration coverage. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_runs.py`
 
 ## 5. Usable browser and deployable tools
-- [ ] 5.1 Add Chinese workspace, template editor, skill upload/inspection, connector controls, output/trace viewer, navigation and separate demonstration HTTP/MCP service with deployment docs. Verify actual browser interactions and protocol service: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_browser.py tests/test_platform_demo.py`
+- [x] 5.1 Add Chinese workspace, template editor, skill upload/inspection, connector controls, output/trace viewer, navigation and separate demonstration HTTP/MCP service with deployment docs. Verify actual browser interactions and protocol service: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_browser.py tests/test_platform_demo.py`
 
 ## 6. Acceptance and report
 - [ ] 6.1 Run full regression, capture controlled and real model/tool evidence, build updated PDF in docs and verify report integrity; deploy additive application/demo update without replacing private configuration or volumes. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider && PYTHONDONTWRITEBYTECODE=1 python docs/verification/verify_platform_report.py`

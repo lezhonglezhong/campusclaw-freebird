@@ -143,3 +143,9 @@ docker compose exec campusclaw python -m flask --app campusclaw backfill-knowled
 - 关键词、向量和混合检索返回可追溯来源；完整标题提问可定位同班级短材料，
   无证据不调用对话模型。
 - 下载中文命名的材料会保留中文名称，并自动补齐 `.txt` 或 `.md` 后缀。
+
+## AI 应用平台
+
+登录后进入 `/apps` 使用写作润色、学习规划、练习生成，选择可管理的提示词模板、内置或上传的 JSON Skill，按需绑定知识库及外部 HTTP/MCP 工具。教师管理本班模板、技能与连接；学生使用；执行记录仅本人可读。Compose 另带内部演示计算器工具服务。
+
+完整说明、技能格式、外部连接配置与真实浏览器测试见 [应用平台使用指南](docs/platform-guide.md)。

@@ -29,6 +29,16 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  demo-tools:
+    build: .
+    command: ["python", "-m", "campusclaw.demo_tools"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
   campusclaw:
     build: .
     ports:
@@ -53,6 +63,8 @@ services:
       CHAT_API_KEY: ${CHAT_API_KEY:-}
       CHAT_MODEL: ${CHAT_MODEL:-course-chat}
       GATEWAY_TIMEOUT_SECONDS: ${GATEWAY_TIMEOUT_SECONDS:-10}
+      PLATFORM_CONNECTORS_JSON: ${PLATFORM_CONNECTORS_JSON:-}
+      PLATFORM_DEMO_TOOLS_URL: http://demo-tools:8010
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"]
       interval: 10s

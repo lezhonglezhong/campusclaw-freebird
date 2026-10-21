@@ -1,0 +1,8 @@
+nav { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+a { color:#8a1930; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:32rem; overflow:auto; }
+fieldset { border:1px solid #dce4ef; border-radius:.5rem; margin:1rem 0; }
+details { margin:1rem 0; } summary { cursor:pointer; font-weight:600; }
+button:disabled { opacity:.5; cursor:wait; }
+#connector-controls button { margin:.4rem; }
+#run-history button { font-size:.9rem; }

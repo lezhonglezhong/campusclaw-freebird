@@ -157,3 +157,9 @@ def materials_page():
 def login_page():
     """Render the public browser login page."""
     return render_template("login.html")
+
+
+@auth_bp.get('/apps')
+def apps_page():
+    """Public shell; the Bearer client guards all application data."""
+    return render_template('apps.html')
