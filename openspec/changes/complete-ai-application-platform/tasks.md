@@ -10,7 +10,7 @@
 - [x] 3.1 Add configured HTTP/MCP clients, class enablement/discovery, schema validation, JSON/SSE/session handling and model exchange/tool loop with bounded calls. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_connectors.py`
 
 ## 4. Application execution
-- [ ] 4.1 Connect selected application/template/skill/knowledge/tools to execution and owner-scoped exact traces, citations, errors and integration coverage. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_runs.py`
+- [x] 4.1 Connect selected application/template/skill/knowledge/tools to execution and owner-scoped exact traces, citations, errors and integration coverage. Verify: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_runs.py`
 
 ## 5. Usable browser and deployable tools
 - [ ] 5.1 Add Chinese workspace, template editor, skill upload/inspection, connector controls, output/trace viewer, navigation and separate demonstration HTTP/MCP service with deployment docs. Verify actual browser interactions and protocol service: `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider tests/test_platform_browser.py tests/test_platform_demo.py`

@@ -160,3 +160,37 @@ def discover_tools(user):
         except ToolUnavailable:
             errors.append({'connector_id':key,'error':'tool_unavailable'})
     return jsonify(tools=tools,errors=errors)
+
+
+@platform_bp.post('/runs')
+@require_authenticated_api
+def create_run(user):
+    from campusclaw.platform_execution import prepare_run, run_application, ResourceMissing
+    request.max_content_length = 64 * 1024
+    enabled = enabled_connectors(user)
+    try:
+        prepared = prepare_run(request.get_json(silent=True),user,session(),enabled)
+    except ResourceMissing:
+        return jsonify(error='not_found'),404
+    except ValueError:
+        return jsonify(error='invalid_request'),400
+    result,status = run_application(prepared,user,session(),enabled)
+    return jsonify(result),status
+
+
+@platform_bp.get('/runs')
+@require_authenticated_api
+def list_runs(user):
+    from campusclaw.models import ApplicationRun
+    items = session().query(ApplicationRun).filter_by(user_id=user.id,class_id=user.class_id).order_by(ApplicationRun.id.desc()).limit(30)
+    return jsonify(runs=[{'id':item.id,'app_id':item.app_id,'status':item.status,'created_at':item.created_at.isoformat()} for item in items])
+
+
+@platform_bp.get('/runs/<int:run_id>')
+@require_authenticated_api
+def get_run(user,run_id):
+    import json
+    from campusclaw.models import ApplicationRun
+    item = session().query(ApplicationRun).filter_by(id=run_id,user_id=user.id,class_id=user.class_id).one_or_none()
+    if item is None:return jsonify(error='not_found'),404
+    return jsonify(id=item.id,status=item.status,trace=json.loads(item.trace_json))

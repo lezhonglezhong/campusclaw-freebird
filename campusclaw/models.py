@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 
 from campusclaw.db import Base
 
@@ -121,3 +122,15 @@ class ConnectorBinding(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False)
     connector_id: Mapped[str] = mapped_column(String(32), nullable=False)
+
+
+class ApplicationRun(Base):
+    """Private execution evidence containing content, never transport credentials."""
+    __tablename__ = 'application_runs'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False, index=True)
+    class_id: Mapped[int] = mapped_column(ForeignKey('classes.id'), nullable=False)
+    app_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    trace_json: Mapped[str] = mapped_column(Text().with_variant(MEDIUMTEXT(), 'mysql'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
