@@ -1,6 +1,6 @@
 # CampusClaw
 
-CampusClaw 是“互联网软件技术开发与实践”课程的三人小组学期项目，由 Freebird 小组维护；仓库名为 `campusclaw-freebird`。
+CampusClaw 是“互联网软件技术开发与实践”课程当前个人项目阶段的 AI 应用平台；仓库名为 `campusclaw-freebird`。目前尚未进入后续合作阶段。个人阶段已完成的功能作为后续建设的基础，不重复列为待开发任务。
 
 ## 开发方式
 
@@ -148,4 +148,4 @@ docker compose exec campusclaw python -m flask --app campusclaw backfill-knowled
 
 登录后进入 `/apps` 使用写作润色、学习规划、练习生成，选择可管理的提示词模板、内置或上传的 JSON Skill，按需绑定知识库及外部 HTTP/MCP 工具。教师管理本班模板、技能与连接；学生使用；执行记录仅本人可读。Compose 另带内部演示计算器工具服务。
 
-完整说明、技能格式、外部连接配置与真实浏览器测试见 [应用平台使用指南](docs/platform-guide.md)。
+完整说明、技能格式、外部连接配置与真实浏览器测试见 [应用平台使用指南](docs/platform-guide.md)。验收报告见 [个人项目验证报告](docs/campusclaw-platform-verification.pdf)。本次全量 226 项测试通过；真实模型请求在较长生成场景下需要更长等待时间，部署现使用 `GATEWAY_TIMEOUT_SECONDS=30`，示例配置同步为 30 秒。外部工具 HTTP 超时仍为 10 秒。

@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-21T02:27:07.463070+00:00",
+  "checks": [
+    {
+      "path": "/health",
+      "status": 200,
+      "body": {
+        "status": "ok"
+      }
+    },
+    {
+      "path": "/api/me",
+      "anonymous": true,
+      "status": 401
+    },
+    {
+      "path": "/login",
+      "fixture_account": "student-a",
+      "status": 200,
+      "token_returned": true
+    },
+    {
+      "path": "/api/me",
+      "status": 200
+    },
+    {
+      "path": "/api/materials",
+      "status": 200,
+      "materials_count": 2
+    },
+    {
+      "path": "/api/retrieval?q=UNMATCHED_AUDIT_SENTINEL_20261021&mode=keyword",
+      "status": 200,
+      "hits_count": 1
+    },
+    {
+      "path": "/api/retrieval?q=UNMATCHED_AUDIT_SENTINEL_20261021&mode=vector",
+      "status": 200,
+      "hits_count": 0
+    }
+  ],
+  "runtime_comparison": {
+    "files": 22,
+    "mismatches": []
+  }
+}

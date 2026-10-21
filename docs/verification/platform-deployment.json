@@ -1,0 +1,73 @@
+{
+  "services": [
+    {
+      "service": "campusclaw",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "demo-tools",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "mysql",
+      "state": "running",
+      "health": "healthy"
+    },
+    {
+      "service": "qdrant",
+      "state": "running",
+      "health": "healthy"
+    }
+  ],
+  "utc": "2026-10-21T03:22:21.716403+00:00",
+  "checks": [
+    {
+      "path": "/health",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/apps",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/apps",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/templates",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/skills",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/connectors",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/platform/runs",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/api/materials",
+      "status": 200,
+      "expected": 200
+    }
+  ],
+  "all_checks_passed": true
+}

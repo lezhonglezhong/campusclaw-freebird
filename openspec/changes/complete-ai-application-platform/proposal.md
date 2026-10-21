@@ -12,6 +12,7 @@ The verification report found a working class-scoped knowledge assistant but mis
 - Add deployment-configured HTTP and MCP Streamable HTTP connectors, teacher class enablement, discovery, selected-tool execution and bounded LLM tool-call/result continuation.
 - Add isolated integration and browser acceptance, deployment examples, captured request/response evidence and update the PDF honestly.
 - Correct stale authentication-secret references in existing specifications.
+- Reflect the user clarification that this is the individual-project stage in the report, README, AGENTS and topic documents; future collaboration reuses completed capabilities.
 
 ## Capabilities
 

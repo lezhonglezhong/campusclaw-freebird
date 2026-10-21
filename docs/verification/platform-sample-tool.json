@@ -1,0 +1,1 @@
+{"function":{"description":"对两个数字进行加、减、乘、除运算（只读计算器）","name":"demo-mcp__calculate_edca249d","parameters":{"additionalProperties":false,"properties":{"a":{"type":"number"},"b":{"type":"number"},"operation":{"enum":["add","subtract","multiply","divide"],"type":"string"}},"required":["a","b","operation"],"type":"object"}},"type":"function"}

@@ -4,7 +4,7 @@
 See proposal.md. Existing Flask/SQLAlchemy application has a synchronous OpenAI-compatible provider, JWT authentication, class-scoped retrieval and 168 passing tests. Keep /api/ask unchanged. Existing main auth specs include obsolete Cookie/page wording as well as obsolete secret names; correct those to the deployed Bearer contract.
 
 ## Goals / Non-Goals
-Deliver usable UI and APIs for all missing assessment features with inspectable exact calls. Skills are intentionally declarative prompt workflows, not arbitrary executable packages. MCP support targets the published 2025-06-18 Streamable HTTP protocol (JSON and POST SSE); stdio, OAuth and sampling are not included. No remote Git push or claim of individual authorship.
+Deliver usable UI and APIs for all missing assessment features with inspectable exact calls. Skills are intentionally declarative prompt workflows, not arbitrary executable packages. MCP support targets the published 2025-06-18 Streamable HTTP protocol (JSON and POST SSE); stdio, OAuth and sampling are not included. No remote Git push. The user clarified that the current delivery is their individual project; describe the project stage accordingly without inventing contribution statistics. Future collaboration must reuse completed modules.
 
 ## Decisions
 - Separate /apps workspace and /api/platform endpoints keep existing answer contracts and regression tests stable. Three immutable catalog applications supply distinct system instructions; templates and skill choices bind on each run through explicit form controls.
